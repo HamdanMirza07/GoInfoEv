@@ -342,22 +342,22 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
       {/* ───────────────────────────────────────────────────────────
           1. HEADER & GLOBAL CONTROLS BANNER
       ──────────────────────────────────────────────────────────── */}
-      <section className="bg-[#071B2B] text-white rounded-3xl p-6 sm:p-8 border border-[#172B3A] shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 rounded-full bg-[#16A36A]/10 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-96 h-96 rounded-full bg-[#F0B429]/10 blur-3xl pointer-events-none"></div>
+      <section className="bg-[#F5F8F6] text-[#071B2B] rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10 space-y-6">
           
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#172B3A]">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200/90">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16A36A]/20 text-[#16A36A] border border-[#16A36A]/30 text-xs font-bold">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold shadow-xs">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[#16A36A]" />
                 <span>Side-by-Side Multi-Model Analytics</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#071B2B]">
                 EV Bike Comparison Matrix
               </h1>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
+              <p className="text-slate-600 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
                 Compare verified specifications, real-world range simulations, battery chemistry, WAPDA charging bills, and petrol savings for up to 6 Pakistani electric bikes simultaneously.
               </p>
             </div>
@@ -366,21 +366,21 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
               <button
                 onClick={() => setHighlightDifferences(!highlightDifferences)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer border flex items-center gap-1.5 shadow-sm ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer border flex items-center gap-1.5 shadow-xs ${
                   highlightDifferences
                     ? 'bg-[#16A36A] text-white border-[#16A36A]'
-                    : 'bg-[#172B3A] text-slate-200 hover:bg-[#1a3244] border-slate-700'
+                    : 'bg-white text-[#071B2B] hover:bg-slate-50 border-slate-300'
                 }`}
                 title="Toggle highlighting best metrics in each category"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-[#16A36A]" />
                 <span>{highlightDifferences ? 'Highlight Best Specs ON' : 'Highlight Best Specs'}</span>
               </button>
 
               {selectedModelIds.length < 6 && (
                 <button
                   onClick={handleAddSlot}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#16A36A] hover:bg-[#138e5b] text-white text-xs font-black rounded-xl transition-all shadow-md cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#16A36A] hover:bg-[#138e5b] text-white text-xs font-black rounded-xl transition-all shadow-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Bike ({selectedModelIds.length}/6)</span>
@@ -389,7 +389,7 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
 
               <button
                 onClick={handleClearAll}
-                className="p-2 rounded-xl bg-[#172B3A] hover:bg-rose-900/40 text-slate-300 hover:text-rose-300 border border-slate-700 text-xs font-bold transition-all cursor-pointer"
+                className="p-2 rounded-xl bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-300 text-xs font-bold transition-all cursor-pointer shadow-xs"
                 title="Reset selections to default 2 bikes"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -398,10 +398,10 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
               {/* ACTIVE SHARE BUTTON */}
               <button
                 onClick={() => setShowShareModal(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#172B3A] hover:bg-[#16A36A] text-slate-100 hover:text-white border border-slate-700 text-xs font-extrabold transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#071B2B] border border-slate-300 text-xs font-extrabold transition-all cursor-pointer shadow-xs"
                 title="Open share options"
               >
-                <Share2 className="w-4 h-4 text-[#16A36A] group-hover:text-white" />
+                <Share2 className="w-4 h-4 text-[#16A36A]" />
                 <span>Share</span>
               </button>
 
@@ -478,14 +478,14 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
           {selectedModels.map((m, idx) => (
             <div 
               key={`vehicle-card-${idx}`}
-              className="bg-white border-2 border-slate-200 hover:border-[#16A36A] rounded-2xl p-4 shadow-xs relative transition-all duration-200 flex flex-col justify-between group"
+              className="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-xs relative flex flex-col justify-between group transition-all duration-200"
             >
               <div className="space-y-3">
                 
                 {/* Slot Header Bar */}
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-[#071B2B] text-white rounded-md">
-                    Bike #{idx + 1}
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 bg-[#071B2B] text-white rounded-lg tracking-wide">
+                    BIKE #{idx + 1}
                   </span>
 
                   <div className="flex items-center gap-1">
@@ -493,7 +493,7 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
                     {idx > 0 && (
                       <button
                         onClick={() => handleSwapSlots(idx, idx - 1)}
-                        className="p-1 text-slate-400 hover:text-[#071B2B] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[10px] font-bold"
+                        className="p-1 text-slate-400 hover:text-[#071B2B] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[11px] font-bold"
                         title="Move left"
                       >
                         ←
@@ -502,7 +502,7 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
                     {idx < selectedModels.length - 1 && (
                       <button
                         onClick={() => handleSwapSlots(idx, idx + 1)}
-                        className="p-1 text-slate-400 hover:text-[#071B2B] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[10px] font-bold"
+                        className="p-1 text-slate-400 hover:text-[#071B2B] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[11px] font-bold"
                         title="Move right"
                       >
                         →
@@ -523,12 +523,12 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
                 </div>
 
                 {/* Bike Image Banner */}
-                <div className="relative w-full h-32 bg-[#F5F8F6] rounded-xl overflow-hidden border border-slate-200/80 flex items-center justify-center p-2">
+                <div className="relative w-full h-36 bg-[#F5F8F6] rounded-2xl overflow-hidden border border-slate-200/80 flex items-center justify-center p-3">
                   {m.image ? (
                     <img
                       src={m.image}
                       alt={getFullName(m)}
-                      className="max-h-full max-w-full object-contain filter drop-shadow-xs group-hover:scale-105 transition-transform duration-300"
+                      className="max-h-full max-w-full object-contain filter drop-shadow-xs"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         const parent = e.currentTarget.parentElement;
@@ -542,35 +542,30 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
                   <div className={`svg-bike-fallback ${m.image ? 'hidden' : 'block'} w-full h-full flex items-center justify-center`}>
                     <AnimatedEVBikeSvg className="w-full h-24 text-[#16A36A]" />
                   </div>
-
-                  <button
-                    onClick={() => setPickerModalIndex(idx)}
-                    className="absolute inset-0 bg-[#071B2B]/60 backdrop-blur-2xs text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 font-bold text-xs cursor-pointer"
-                  >
-                    <ArrowLeftRight className="w-5 h-5 text-[#16A36A]" />
-                    <span>Change Vehicle</span>
-                  </button>
                 </div>
 
                 {/* Vehicle Meta & Selector Button */}
-                <div className="space-y-1 text-center">
+                <div className="space-y-1.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-black uppercase text-[#16A36A]">
+                    <span className="text-[10px] font-black uppercase text-[#16A36A] tracking-wider">
                       {m.brand}
                     </span>
                     {m.category && (
-                      <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
+                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                         {m.category}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="font-extrabold text-[#071B2B] text-sm leading-snug line-clamp-1">
+                  <h3 className="font-extrabold text-[#071B2B] text-sm sm:text-base leading-snug line-clamp-1">
                     {getFullName(m)}
                   </h3>
 
-                  <div className="text-base font-black text-[#071B2B]">
-                    {formatPKR(m.price)}
+                  {/* Clean Modern Boxed Price (Matching Image 2 with no hover effect) */}
+                  <div className="pt-1">
+                    <div className="inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-white border border-slate-300 shadow-2xs text-[#071B2B] font-extrabold text-sm sm:text-base cursor-default select-none">
+                      {formatPKR(m.price)}
+                    </div>
                   </div>
                 </div>
 
@@ -579,7 +574,7 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
               {/* Bottom Quick Replace Trigger */}
               <button
                 onClick={() => setPickerModalIndex(idx)}
-                className="mt-3 w-full py-1.5 px-2 bg-[#F5F8F6] hover:bg-[#071B2B] hover:text-white text-[#071B2B] rounded-xl text-xs font-extrabold transition-all border border-slate-200 flex items-center justify-center gap-1 cursor-pointer"
+                className="mt-3.5 w-full py-2.5 px-3 bg-[#F5F8F6] hover:bg-slate-100 text-[#071B2B] rounded-2xl text-xs font-extrabold transition-colors border border-slate-200/90 flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 text-[#16A36A]" />
                 <span>Swap Vehicle</span>
@@ -646,12 +641,12 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
           <div className="min-w-[760px] divide-y divide-slate-100">
             
             {/* Header Vehicles Title Row */}
-            <div className="bg-[#071B2B] text-white p-4 sticky top-0 z-20">
+            <div className="bg-[#F5F8F6] text-[#071B2B] p-4 border-b border-slate-200/90 sticky top-0 z-20 shadow-2xs backdrop-blur-md">
               <div className="grid grid-cols-12 gap-4 items-center text-xs font-black uppercase tracking-wider">
-                <div className="col-span-3 text-slate-300">Specification Field</div>
+                <div className="col-span-3 text-slate-500 font-extrabold">Specification Field</div>
                 <div className="col-span-9 grid gap-4" style={{ gridTemplateColumns: `repeat(${selectedModels.length}, minmax(0, 1fr))` }}>
                   {selectedModels.map((m, idx) => (
-                    <div key={`header-title-${idx}`} className="text-center truncate font-extrabold text-[#16A36A]">
+                    <div key={`header-title-${idx}`} className="text-center truncate font-black text-[#16A36A]">
                       {getFullName(m)}
                     </div>
                   ))}
@@ -1041,10 +1036,10 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-extrabold text-[#071B2B] tracking-tight flex items-center gap-2">
-            <Award className="w-5 h-5 text-[#F0B429]" />
+            <Award className="w-5 h-5 text-[#16A36A]" />
             <span>Smart Buying Recommendations</span>
           </h2>
-          <span className="text-xs text-slate-500 font-medium">
+          <span className="text-xs text-slate-500 font-semibold">
             Based on current comparison selection
           </span>
         </div>
@@ -1052,9 +1047,9 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           
           {/* Best Budget Option */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#16A36A]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-2.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-3 py-1 rounded-full border border-[#16A36A]/20">
                 💵 Best Budget Option
               </span>
               <DollarSign className="w-4 h-4 text-[#16A36A]" />
@@ -1062,16 +1057,16 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(bestBudgetModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#071B2B]">{formatPKR(bestBudgetModel.model.price)}</span>
-              <span className="text-xs text-slate-500">Lowest purchase price</span>
+              <span className="text-xs text-slate-500 font-medium">Lowest purchase price</span>
             </div>
           </div>
 
           {/* Best Range */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#16A36A]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-2.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-3 py-1 rounded-full border border-[#16A36A]/20">
                 ⚡ Longest Mileage Range
               </span>
               <Gauge className="w-4 h-4 text-[#16A36A]" />
@@ -1079,16 +1074,16 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(bestRangeModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#16A36A]">~{Math.round(bestRangeModel.realRange)} km</span>
-              <span className="text-xs text-slate-500">Real-world per charge</span>
+              <span className="text-xs text-slate-500 font-medium">Real-world per charge</span>
             </div>
           </div>
 
           {/* Best Performance */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#F0B429]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-[#071B2B] bg-[#F0B429] px-2.5 py-0.5 rounded-md font-extrabold">
+              <span className="text-[10px] font-black uppercase text-[#071B2B] bg-[#F0B429]/20 border border-[#F0B429]/40 px-3 py-1 rounded-full font-extrabold">
                 🚀 Top Performance &amp; Speed
               </span>
               <Zap className="w-4 h-4 text-[#F0B429]" />
@@ -1096,16 +1091,16 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(bestPerformanceModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#071B2B]">{bestPerformanceModel.model.topSpeed}</span>
-              <span className="text-xs text-slate-500">{bestPerformanceModel.model.motor}</span>
+              <span className="text-xs text-slate-500 font-medium">{bestPerformanceModel.model.motor}</span>
             </div>
           </div>
 
           {/* Best Battery */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#16A36A]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-2.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-3 py-1 rounded-full border border-[#16A36A]/20">
                 🔋 Largest Battery Pack
               </span>
               <Battery className="w-4 h-4 text-[#16A36A]" />
@@ -1113,16 +1108,16 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(bestBatteryModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#071B2B]">{bestBatteryModel.model.batteryWh} Wh</span>
-              <span className="text-xs text-slate-500">({bestBatteryModel.model.batteryType})</span>
+              <span className="text-xs text-slate-500 font-medium">({bestBatteryModel.model.batteryType})</span>
             </div>
           </div>
 
           {/* Best Daily Commuter */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#172B3A]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-white bg-[#071B2B] px-2.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-black uppercase text-[#071B2B] bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                 🛵 Best Daily Commuter
               </span>
               <Bike className="w-4 h-4 text-[#071B2B]" />
@@ -1130,16 +1125,16 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(bestCommuterModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#16A36A]">High ROI</span>
-              <span className="text-xs text-slate-500">Optimal Range to Price ratio</span>
+              <span className="text-xs text-slate-500 font-medium">Optimal Range to Price ratio</span>
             </div>
           </div>
 
           {/* Lowest Running Cost */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 relative overflow-hidden border-l-4 border-l-[#16A36A]">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-2.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-black uppercase text-[#16A36A] bg-[#16A36A]/10 px-3 py-1 rounded-full border border-[#16A36A]/20">
                 💰 Lowest Running Cost
               </span>
               <TrendingUp className="w-4 h-4 text-[#16A36A]" />
@@ -1147,9 +1142,9 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
             <h3 className="text-base font-extrabold text-[#071B2B]">
               {getFullName(lowestCostModel.model)}
             </h3>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-1">
               <span className="text-lg font-black text-[#16A36A]">Rs {lowestCostModel.costPerKm.toFixed(2)} / km</span>
-              <span className="text-xs text-slate-500">vs Petrol Rs 6.22/km</span>
+              <span className="text-xs text-slate-500 font-medium">vs Petrol Rs 6.22/km</span>
             </div>
           </div>
 
@@ -1159,13 +1154,13 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
       {/* ───────────────────────────────────────────────────────────
           5. COMPARISON CHARTS (VISUAL BARS)
       ──────────────────────────────────────────────────────────── */}
-      <section className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6">
+      <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h2 className="text-xl font-extrabold text-[#071B2B] tracking-tight flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-[#16A36A]" />
             <span>Visual Specification Comparison Charts</span>
           </h2>
-          <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+          <span className="text-xs text-slate-500 font-semibold hidden sm:inline">
             Relative benchmark across selected bikes
           </span>
         </div>
@@ -1174,22 +1169,22 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
           
           {/* Chart 1: Retail Price Comparison */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5 text-[#071B2B]" /> Retail Price (PKR)
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#071B2B] flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-[#16A36A]" /> Retail Price (PKR)
             </h3>
-            <div className="space-y-2 bg-[#F5F8F6] p-4 rounded-2xl border border-slate-200/80">
+            <div className="space-y-3 bg-[#F5F8F6] p-5 rounded-2xl border border-slate-200/90">
               {modelStats.map((s, i) => {
                 const maxVal = Math.max(...selectedModels.map(m => m.price || 1));
                 const pct = Math.max(10, Math.round(((s.model.price || 0) / maxVal) * 100));
                 const isBest = s.model.price === bestPrice;
 
                 return (
-                  <div key={`chart-price-${i}`} className="space-y-1">
+                  <div key={`chart-price-${i}`} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-[#071B2B]">
                       <span className="truncate max-w-[200px]">{getFullName(s.model)}</span>
                       <span className={isBest ? 'text-[#16A36A] font-black' : ''}>{formatPKR(s.model.price)}</span>
                     </div>
-                    <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#071B2B]'}`}
                         style={{ width: `${pct}%` }}
@@ -1203,24 +1198,24 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
 
           {/* Chart 2: Real-World Range Comparison */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#071B2B] flex items-center gap-1.5">
               <Gauge className="w-3.5 h-3.5 text-[#16A36A]" /> Real-World Range (KM)
             </h3>
-            <div className="space-y-2 bg-[#F5F8F6] p-4 rounded-2xl border border-slate-200/80">
+            <div className="space-y-3 bg-[#F5F8F6] p-5 rounded-2xl border border-slate-200/90">
               {modelStats.map((s, i) => {
                 const maxVal = Math.max(...modelStats.map(st => st.realRange));
                 const pct = Math.max(10, Math.round((s.realRange / Math.max(1, maxVal)) * 100));
                 const isBest = Math.abs(s.realRange - bestRange) < 0.1;
 
                 return (
-                  <div key={`chart-range-${i}`} className="space-y-1">
+                  <div key={`chart-range-${i}`} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-[#071B2B]">
                       <span className="truncate max-w-[200px]">{getFullName(s.model)}</span>
                       <span className={isBest ? 'text-[#16A36A] font-black' : ''}>~{Math.round(s.realRange)} km</span>
                     </div>
-                    <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#172B3A]'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#071B2B]'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -1232,22 +1227,22 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
 
           {/* Chart 3: Battery Capacity Comparison */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#071B2B] flex items-center gap-1.5">
               <Battery className="w-3.5 h-3.5 text-[#16A36A]" /> Battery Capacity (Watt-Hours)
             </h3>
-            <div className="space-y-2 bg-[#F5F8F6] p-4 rounded-2xl border border-slate-200/80">
+            <div className="space-y-3 bg-[#F5F8F6] p-5 rounded-2xl border border-slate-200/90">
               {modelStats.map((s, i) => {
                 const maxVal = Math.max(...selectedModels.map(m => m.batteryWh));
                 const pct = Math.max(10, Math.round((s.model.batteryWh / Math.max(1, maxVal)) * 100));
                 const isBest = s.model.batteryWh === bestBattery;
 
                 return (
-                  <div key={`chart-bat-${i}`} className="space-y-1">
+                  <div key={`chart-bat-${i}`} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-[#071B2B]">
                       <span className="truncate max-w-[200px]">{getFullName(s.model)}</span>
                       <span className={isBest ? 'text-[#16A36A] font-black' : ''}>{s.model.batteryWh} Wh</span>
                     </div>
-                    <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#071B2B]'}`}
                         style={{ width: `${pct}%` }}
@@ -1261,24 +1256,24 @@ export const ProductComparison: React.FC<ProductComparisonProps> = ({ onSelectMo
 
           {/* Chart 4: Cost Per KM Comparison */}
           <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#071B2B] flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#16A36A]" /> Electricity Cost Per KM (PKR/KM)
             </h3>
-            <div className="space-y-2 bg-[#F5F8F6] p-4 rounded-2xl border border-slate-200/80">
+            <div className="space-y-3 bg-[#F5F8F6] p-5 rounded-2xl border border-slate-200/90">
               {modelStats.map((s, i) => {
                 const maxVal = Math.max(...modelStats.map(st => st.costPerKm));
                 const pct = Math.max(10, Math.round((s.costPerKm / Math.max(0.1, maxVal)) * 100));
                 const isBest = Math.abs(s.costPerKm - lowestCostPerKm) < 0.01;
 
                 return (
-                  <div key={`chart-cost-${i}`} className="space-y-1">
+                  <div key={`chart-cost-${i}`} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-[#071B2B]">
                       <span className="truncate max-w-[200px]">{getFullName(s.model)}</span>
                       <span className={isBest ? 'text-[#16A36A] font-black' : ''}>Rs {s.costPerKm.toFixed(2)}/km</span>
                     </div>
-                    <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#172B3A]'}`}
+                        className={`h-full rounded-full transition-all duration-500 ${isBest ? 'bg-[#16A36A]' : 'bg-[#071B2B]'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

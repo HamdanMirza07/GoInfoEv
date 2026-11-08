@@ -124,21 +124,21 @@ _Sent via goinfoEV Contact Form_`;
       {/* ───────────────────────────────────────────────────────────
           HERO BANNER
       ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-6 sm:p-10 lg:p-12 border border-slate-800 shadow-xl">
-        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-80 h-80 rounded-full bg-cyan-600/20 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] text-[#071B2B] p-6 sm:p-10 lg:p-12 border border-slate-200/90 shadow-xs">
+        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-80 h-80 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-900/60 border border-blue-700/60 text-blue-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[#071B2B] text-xs font-bold shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#16A36A]" />
             <span>Connect with the Team</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-            Get in Touch with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">goinfoEV</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-[#071B2B]">
+            Get in Touch with <span className="text-[#16A36A]">goinfoEV</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
             Have questions about EV calculations, want your electric bike brand or dealership listed, or looking to collaborate on green mobility across Pakistan? We respond rapidly.
           </p>
 
@@ -148,16 +148,16 @@ _Sent via goinfoEV Contact Form_`;
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-lg shadow-emerald-600/30 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white font-extrabold transition-all shadow-xs cursor-pointer"
             >
               <Phone className="w-4 h-4" />
               <span>Direct WhatsApp: +92 303 6001701</span>
             </a>
             <a
               href="mailto:Hamdan7394@gmail.com?subject=goinfoEV%20Inquiry"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-[#071B2B] border border-slate-300 font-extrabold transition-all shadow-xs cursor-pointer"
             >
-              <Mail className="w-4 h-4 text-blue-400" />
+              <Mail className="w-4 h-4 text-[#16A36A]" />
               <span>Hamdan7394@gmail.com</span>
             </a>
           </div>

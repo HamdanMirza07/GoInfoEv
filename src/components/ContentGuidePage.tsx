@@ -107,22 +107,28 @@ export const ContentGuidePage: React.FC<ContentGuidePageProps> = ({ onNavigate }
       {/* ───────────────────────────────────────────────────────────
           HERO BANNER
       ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 text-white p-6 sm:p-10 lg:p-12 shadow-xl">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/60 border border-indigo-700/60 text-indigo-300 text-xs font-bold">
-            <FileText className="w-3.5 h-3.5 text-indigo-400" />
+      {/* ───────────────────────────────────────────────────────────
+          HERO BANNER
+      ──────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] border border-slate-200/90 text-[#071B2B] p-6 sm:p-10 lg:p-12 shadow-xs">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-3xl space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[#071B2B] text-xs font-bold shadow-xs">
+            <FileText className="w-3.5 h-3.5 text-[#16A36A]" />
             <span>Essential Knowledgebase</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-            Pakistan <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">EV Buyer & Owner Guide</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-[#071B2B]">
+            Pakistan <span className="text-[#16A36A]">EV Buyer & Owner Guide</span>
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-normal">
             Everything you need to know about purchasing, maintaining, wiring, and legally operating an electric two-wheeler in Pakistan.
           </p>
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+        <div className="relative z-10 mt-8 pt-6 border-t border-slate-200/90 flex flex-wrap items-center gap-2">
           {[
             { id: 'battery', label: '🔋 Battery (15 Guides)' },
             { id: 'maintenance', label: '🔧 Maintenance & Problems (20 Guides)' },
@@ -135,10 +141,10 @@ export const ContentGuidePage: React.FC<ContentGuidePageProps> = ({ onNavigate }
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+                  ? 'bg-[#16A36A] text-white shadow-xs'
+                  : 'bg-white text-[#071B2B] hover:bg-slate-100 border border-slate-300 shadow-xs'
               }`}
             >
               {tab.label}

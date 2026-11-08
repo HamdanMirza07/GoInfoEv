@@ -156,28 +156,31 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold mb-3">
-              <Gauge className="w-3.5 h-3.5" />
-              Dynamic Scooter Range Calculator
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold mb-3 shadow-xs">
+              <Gauge className="w-3.5 h-3.5 text-[#16A36A]" />
+              <span>Dynamic Scooter Range Calculator</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               EV Bike Range Estimator
             </h1>
-            <p className="text-slate-600 text-xs sm:text-sm mt-1 max-w-3xl">
+            <p className="text-slate-600 text-xs sm:text-sm mt-1 max-w-3xl font-normal leading-relaxed">
               Calculates precise battery consumption (%/km), remaining battery, range, trip reachability, and recommended speed using official Eco and Full-Speed range parameters.
             </p>
           </div>
 
           <button
             onClick={resetDefaults}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-[#071B2B] border border-slate-300 rounded-xl text-xs font-bold transition-colors shadow-xs shrink-0 cursor-pointer"
           >
-            <RotateCcw className="w-4 h-4" />
-            Reset Defaults
+            <RotateCcw className="w-4 h-4 text-[#16A36A]" />
+            <span>Reset Defaults</span>
           </button>
         </div>
       </div>
@@ -402,22 +405,22 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
             </div>
 
             {/* Output 4: Can Reach Destination Banner */}
-            <div className={`p-4 rounded-xl border text-xs flex items-start gap-3 transition-all ${
+            <div className={`p-4 rounded-2xl border text-xs flex items-start gap-3 transition-all ${
               canReach
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                : 'bg-rose-50 border-rose-200 text-rose-950'
+                ? 'bg-[#F5F8F6] border-emerald-200 text-[#071B2B]'
+                : 'bg-[#F5F8F6] border-rose-200 text-[#071B2B]'
             }`}>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0 ${
-                canReach ? 'bg-emerald-600' : 'bg-rose-600'
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white shrink-0 ${
+                canReach ? 'bg-[#16A36A]' : 'bg-rose-600'
               }`}>
                 {canReach ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
               </div>
               <div className="space-y-1">
                 <div className="text-xs uppercase font-extrabold text-slate-500">4. Can Reach Destination?</div>
-                <div className="text-xl font-black">
+                <div className="text-xl font-black text-[#071B2B]">
                   {canReach ? 'YES — Destination Reachable' : 'NO — Battery Insufficient'}
                 </div>
-                <p className="text-[11px] leading-relaxed opacity-90">
+                <p className="text-[11px] leading-relaxed text-slate-600">
                   {canReach
                     ? `You will reach your ${destDistance} km destination with ${remainingBattery.toFixed(1)}% battery remaining (≥ 5% buffer required).`
                     : `Trip requires ${batteryUsed.toFixed(1)}% battery, leaving only ${remainingBattery.toFixed(1)}% (below safe 5% threshold).`}
@@ -427,21 +430,21 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
 
             {/* Output 5: Recommended Speed Box (Shown if Insufficient) */}
             {!canReach && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
-                <div className="flex items-center gap-2 font-extrabold uppercase text-amber-800 text-[11px]">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" /> 5. Recommended Speed
+              <div className="p-4 bg-[#F5F8F6] border border-slate-200 rounded-2xl text-xs text-[#071B2B] space-y-2">
+                <div className="flex items-center gap-2 font-extrabold uppercase text-slate-700 text-[11px]">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" /> 5. Recommended Speed
                 </div>
                 {recommendedSpeed ? (
                   <div>
-                    <div className="text-2xl font-black text-amber-900">
+                    <div className="text-xl font-black text-[#071B2B]">
                       Reduce Speed to ≤ {recommendedSpeed} km/h
                     </div>
-                    <p className="text-[11px] text-amber-800 mt-1">
+                    <p className="text-[11px] text-slate-600 mt-1">
                       Lowering your average speed from <strong>{speed} km/h</strong> to <strong>{recommendedSpeed} km/h</strong> will reduce energy consumption per km and allow you to reach your target safely with ≥ 5% remaining battery.
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-amber-800">
+                  <p className="text-[11px] text-slate-600">
                     Target distance ({destDistance} km) exceeds total battery capacity even at eco speeds. Please charge your scooter before traveling.
                   </p>
                 )}
@@ -452,9 +455,9 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               
               {/* Output 1: Battery Used (%) */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <div className="bg-[#F5F8F6] border border-slate-200 rounded-2xl p-4">
                 <span className="text-[10px] text-slate-500 font-bold uppercase block">1. Battery Used</span>
-                <strong className="text-2xl text-slate-900 font-black mt-1 block">
+                <strong className="text-2xl text-[#071B2B] font-black mt-1 block">
                   {batteryUsed.toFixed(1)} %
                 </strong>
                 <span className="text-[10px] text-slate-500 block mt-0.5">
@@ -463,9 +466,9 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
               </div>
 
               {/* Output 2: Remaining Battery (%) */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <div className="bg-[#F5F8F6] border border-slate-200 rounded-2xl p-4">
                 <span className="text-[10px] text-slate-500 font-bold uppercase block">2. Remaining Battery</span>
-                <strong className={`text-2xl font-black mt-1 block ${remainingBattery >= 5 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                <strong className={`text-2xl font-black mt-1 block ${remainingBattery >= 5 ? 'text-[#16A36A]' : 'text-rose-600'}`}>
                   {remainingBattery.toFixed(1)} %
                 </strong>
                 <span className="text-[10px] text-slate-500 block mt-0.5">
@@ -474,10 +477,10 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
               </div>
 
               {/* Output 3: Estimated Range Remaining (km) */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:col-span-2">
+              <div className="bg-[#F5F8F6] border border-slate-200 rounded-2xl p-4 sm:col-span-2">
                 <span className="text-[10px] text-slate-500 font-bold uppercase block">3. Estimated Range Remaining</span>
                 <div className="flex items-baseline justify-between mt-1">
-                  <strong className="text-2xl text-blue-700 font-black">
+                  <strong className="text-2xl text-[#16A36A] font-black">
                     {remainingEstimatedRangeKm.toFixed(1)} km
                   </strong>
                   <span className="text-xs text-slate-600 font-bold">
@@ -492,13 +495,13 @@ export const RangeEstimator: React.FC<RangeEstimatorProps> = ({ initialModelId }
             </div>
 
             {/* Formula Breakdown Details */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 space-y-2">
-              <strong className="block text-slate-800 font-bold uppercase text-[10px]">Formula Calculations Breakdown:</strong>
+            <div className="p-4 bg-[#F5F8F6] border border-slate-200 rounded-2xl text-[11px] text-slate-600 space-y-2">
+              <strong className="block text-[#071B2B] font-bold uppercase text-[10px]">Formula Calculations Breakdown:</strong>
               <div className="grid grid-cols-2 gap-2 text-[10px]">
-                <div>Base Consumption: <strong>{baseConsumption.toFixed(2)}% / km</strong></div>
-                <div>Weight Factor: <strong>{weightFactor.toFixed(2)}x</strong></div>
-                <div>Speed Factor: <strong>{speedFactor.toFixed(2)}x</strong></div>
-                <div>Final Consumption: <strong>{finalConsumption.toFixed(2)}% / km</strong></div>
+                <div>Base Consumption: <strong className="text-[#071B2B]">{baseConsumption.toFixed(2)}% / km</strong></div>
+                <div>Weight Factor: <strong className="text-[#071B2B]">{weightFactor.toFixed(2)}x</strong></div>
+                <div>Speed Factor: <strong className="text-[#071B2B]">{speedFactor.toFixed(2)}x</strong></div>
+                <div>Final Consumption: <strong className="text-[#071B2B]">{finalConsumption.toFixed(2)}% / km</strong></div>
               </div>
             </div>
 

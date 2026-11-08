@@ -53,29 +53,32 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
       {/* ───────────────────────────────────────────────────────────
           HERO BANNER: MISSION & IDENTITY
       ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 text-white p-6 sm:p-10 lg:p-14 shadow-2xl">
+      {/* ───────────────────────────────────────────────────────────
+          HERO BANNER: MISSION & IDENTITY
+      ──────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] border border-slate-200/90 text-[#071B2B] p-6 sm:p-10 lg:p-14 shadow-xs">
         {/* Subtle Ambient Glows */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none -translate-y-1/3 translate-x-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#16A36A]/12 rounded-full blur-3xl pointer-events-none -translate-y-1/3 translate-x-1/3"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#F0B429]/12 rounded-full blur-3xl pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
 
         <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-900/60 border border-blue-700/60 text-blue-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[#071B2B] text-xs font-bold shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#16A36A]" />
             <span>Pakistan EV Intelligence Suite</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-            Democratizing <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">Electric Vehicle</span> Intelligence Across Pakistan
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-[#071B2B]">
+            Democratizing <span className="text-[#16A36A]">Electric Vehicle</span> Intelligence Across Pakistan
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
             With petrol prices soaring and urban air quality deteriorating, Pakistan's two-wheeler commuter economy is ready for a historic transition. <strong>goinfoEV</strong> was created to eliminate guesswork, debunk range myths, and provide mathematical accuracy for every rider, student, family, and delivery worker.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
             <button
               onClick={() => onNavigate('products')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-lg shadow-blue-600/30 cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white font-extrabold transition-all shadow-xs cursor-pointer"
             >
               <span>Explore 38+ EV Fleet</span>
               <ArrowRight className="w-4 h-4" />
@@ -84,7 +87,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-[#071B2B] border border-slate-300 font-extrabold transition-all shadow-xs cursor-pointer"
             >
               <span>Contact Hamdan Mirza</span>
             </a>
@@ -92,22 +95,22 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Quick Numbers Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 pt-8 border-t border-slate-800/80">
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
-            <div className="text-2xl sm:text-3xl font-black text-blue-400">38+</div>
-            <div className="text-xs text-slate-400 font-medium mt-0.5">Electric Bike Models</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 pt-8 border-t border-slate-200/90 relative z-10">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div className="text-2xl sm:text-3xl font-black text-[#16A36A]">38+</div>
+            <div className="text-xs text-slate-600 font-medium mt-0.5">Electric Bike Models</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
-            <div className="text-2xl sm:text-3xl font-black text-emerald-400">15</div>
-            <div className="text-xs text-slate-400 font-medium mt-0.5">Verified Brands</div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div className="text-2xl sm:text-3xl font-black text-blue-600">15</div>
+            <div className="text-xs text-slate-600 font-medium mt-0.5">Verified Brands</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
-            <div className="text-2xl sm:text-3xl font-black text-amber-400">100%</div>
-            <div className="text-xs text-slate-400 font-medium mt-0.5">Free Public Access</div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div className="text-2xl sm:text-3xl font-black text-amber-600">100%</div>
+            <div className="text-xs text-slate-600 font-medium mt-0.5">Free Public Access</div>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4">
-            <div className="text-2xl sm:text-3xl font-black text-cyan-400">NEPRA</div>
-            <div className="text-xs text-slate-400 font-medium mt-0.5">Dynamic Tariff Engines</div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div className="text-2xl sm:text-3xl font-black text-teal-600">NEPRA</div>
+            <div className="text-xs text-slate-600 font-medium mt-0.5">Dynamic Tariff Engines</div>
           </div>
         </div>
       </section>

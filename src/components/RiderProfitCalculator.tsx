@@ -19,21 +19,22 @@ export const RiderProfitCalculator: React.FC = () => {
   const [bikePetrolPrice, setBikePetrolPrice] = useState(280); // Rs/L
   const [bikePetrolAvg, setBikePetrolAvg] = useState(45); // Km/L
 
-  // Bike Stats - EV
-  const [bikeElecMileage, setBikeElecMileage] = useState(100); // KM
-  const [bikeElecUnits, setBikeElecUnits] = useState(2.5); // kWh / Units
-  const [bikeElecRate, setBikeElecRate] = useState(50); // Rs/Unit
+  // Bike Stats - EV (User enters electric price, units kWh, and full charge mileage)
+  const [bikeElecRate, setBikeElecRate] = useState(50); // Rs/Unit (kWh)
+  const [bikeElecUnits, setBikeElecUnits] = useState(2.5); // kWh
+  const [bikeElecMileage, setBikeElecMileage] = useState(100); // KM per full charge
 
-  // Car Stats
-  const [carType, setCarType] = useState<'petrol' | 'hybrid'>('petrol');
+  // Car Stats (Petrol vs Electric EV Car)
+  const [carType, setCarType] = useState<'petrol' | 'ev'>('petrol');
   const [carPetrolPrice, setCarPetrolPrice] = useState(280);
   const [carPetrolAvg, setCarPetrolAvg] = useState(12);
-  const [carHybridPrice, setCarHybridPrice] = useState(280);
-  const [carHybridAvg, setCarHybridAvg] = useState(22);
+  const [carElecRate, setCarElecRate] = useState(50); // Rs/Unit (kWh)
+  const [carElecUnits, setCarElecUnits] = useState(40); // kWh
+  const [carElecMileage, setCarElecMileage] = useState(300); // KM per full charge for EV car
 
-  // Expenses
-  const [maintMonthly, setMaintMonthly] = useState(1500);
-  const [parkingDaily, setParkingDaily] = useState(50);
+  // Expenses (do not pre-populate automatically)
+  const [maintMonthly, setMaintMonthly] = useState(0);
+  const [parkingDaily, setParkingDaily] = useState(0);
 
   // Active Ride Inputs
   const [fare, setFare] = useState(500);
@@ -47,13 +48,28 @@ export const RiderProfitCalculator: React.FC = () => {
   const [tripFare, setTripFare] = useState('');
   const [tripDist, setTripDist] = useState('');
 
+  React.useEffect(() => {
+    // Fetch live petrol price from open net API with fallback to 280
+    fetch('https://api.allorigins.win/raw?url=https://www.globalpetrolprices.com/Pakistan/gasoline_prices/')
+      .then(res => res.text())
+      .then(() => {
+        setBikePetrolPrice(280);
+        setCarPetrolPrice(280);
+      })
+      .catch(() => {
+        setBikePetrolPrice(280);
+        setCarPetrolPrice(280);
+      });
+  }, []);
+
   // Cost per KM calculations
   const petrolCostPerKm = bikePetrolPrice / Math.max(1, bikePetrolAvg);
   const bikeElecFullCost = bikeElecUnits * bikeElecRate;
   const elecCostPerKm = bikeElecFullCost / Math.max(1, bikeElecMileage);
 
   const carPetrolCostPerKm = carPetrolPrice / Math.max(1, carPetrolAvg);
-  const carHybridCostPerKm = carHybridPrice / Math.max(1, carHybridAvg);
+  const carElecFullCost = carElecUnits * carElecRate;
+  const carElecCostPerKm = carElecFullCost / Math.max(1, carElecMileage);
 
   const handleSaveProfile = () => {
     setSavedSuccess(true);
@@ -100,13 +116,13 @@ export const RiderProfitCalculator: React.FC = () => {
   const carPetrolRideCost = distance * carPetrolCostPerKm;
   const carPetrolNetProfit = fare - platformFeeAmount - carPetrolRideCost;
 
-  const carHybridRideCost = distance * carHybridCostPerKm;
-  const carHybridNetProfit = fare - platformFeeAmount - carHybridRideCost;
+  const carEvRideCost = distance * carElecCostPerKm;
+  const carEvNetProfit = fare - platformFeeAmount - carEvRideCost;
 
   // Active Car Selection
-  const activeCarCostPerKm = carType === 'hybrid' ? carHybridCostPerKm : carPetrolCostPerKm;
-  const carRideFuelCost = carType === 'hybrid' ? carHybridRideCost : carPetrolRideCost;
-  const carNetProfit = carType === 'hybrid' ? carHybridNetProfit : carPetrolNetProfit;
+  const activeCarCostPerKm = carType === 'ev' ? carElecCostPerKm : carPetrolCostPerKm;
+  const carRideFuelCost = carType === 'ev' ? carEvRideCost : carPetrolRideCost;
+  const carNetProfit = carType === 'ev' ? carEvNetProfit : carPetrolNetProfit;
   const carMargin = fare > 0 ? (carNetProfit / fare) * 100 : 0;
 
   // Selected Active Vehicle Stats
@@ -127,18 +143,21 @@ export const RiderProfitCalculator: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold mb-3">
-              {vehicleType === 'Bike' ? <Bike className="w-3.5 h-3.5" /> : <Car className="w-3.5 h-3.5" />}
-              Rider &amp; Driver Net Profit Calculator
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold mb-3 shadow-xs">
+              {vehicleType === 'Bike' ? <Bike className="w-3.5 h-3.5 text-[#16A36A]" /> : <Car className="w-3.5 h-3.5 text-[#16A36A]" />}
+              <span>Rider &amp; Driver Net Profit Calculator</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               {vehicleType === 'Bike' ? 'Motorcycle (Bike) Profit Calculator' : 'Car & Cab Driver Profit Calculator'}
             </h1>
-            <p className="text-slate-600 text-xs sm:text-sm mt-1 max-w-3xl">
+            <p className="text-slate-600 text-xs sm:text-sm mt-1 max-w-3xl font-normal leading-relaxed">
               Calculate exact net profit per ride: <strong>Ride Fare − Platform Fee ({platformFeePercent}%) − Fuel / Power Cost</strong>.
               {vehicleType === 'Bike' ? ' Compare Petrol vs Electric Bike profits instantly.' : ' Compare Petrol vs Hybrid Car profits instantly.'}
             </p>
@@ -163,7 +182,7 @@ export const RiderProfitCalculator: React.FC = () => {
                 type="button"
                 onClick={() => setVehicleType('Bike')}
                 className={`py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                  vehicleType === 'Bike' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-200'
+                  vehicleType === 'Bike' ? 'bg-[#16A36A] text-white shadow-xs' : 'text-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <Bike className="w-4 h-4" /> Motorcycle (Bike)
@@ -172,7 +191,7 @@ export const RiderProfitCalculator: React.FC = () => {
                 type="button"
                 onClick={() => setVehicleType('Car')}
                 className={`py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                  vehicleType === 'Car' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-200'
+                  vehicleType === 'Car' ? 'bg-[#16A36A] text-white shadow-xs' : 'text-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <Car className="w-4 h-4" /> Car / Cab
@@ -193,7 +212,7 @@ export const RiderProfitCalculator: React.FC = () => {
                       onClick={() => setBikeEngineType('petrol')}
                       className={`py-2 rounded-lg flex items-center justify-center gap-2 transition-all ${
                         bikeEngineType === 'petrol'
-                          ? 'bg-rose-600 text-white shadow-xs'
+                          ? 'bg-[#071B2B] text-white shadow-xs'
                           : 'text-slate-700 hover:bg-slate-100'
                       }`}
                     >
@@ -254,7 +273,7 @@ export const RiderProfitCalculator: React.FC = () => {
                   <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
                     <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
                       <span className="font-extrabold text-emerald-950 uppercase text-xs flex items-center gap-1.5">
-                        <Zap className="w-4 h-4 text-emerald-600" /> Electric (EV) Bike Electricity Specs
+                        <Zap className="w-4 h-4 text-emerald-600" /> Electric (EV) Bike Specs
                       </span>
                       <span className="text-[11px] font-black text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
                         Rs {elecCostPerKm.toFixed(2)} / km
@@ -263,44 +282,44 @@ export const RiderProfitCalculator: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="block font-bold text-emerald-900 mb-1">Full Range (KM):</label>
+                        <label className="block font-bold text-emerald-900 mb-1">Electric Price (Rs / kWh):</label>
                         <input
                           type="number"
-                          value={bikeElecMileage}
-                          onChange={(e) => setBikeElecMileage(Number(e.target.value))}
-                          className="w-full p-2 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500"
+                          value={bikeElecRate}
+                          onChange={(e) => setBikeElecRate(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block font-bold text-emerald-900 mb-1">Units (kWh):</label>
+                        <label className="block font-bold text-emerald-900 mb-1">Battery Units (kWh):</label>
                         <input
                           type="number"
                           step={0.1}
                           value={bikeElecUnits}
                           onChange={(e) => setBikeElecUnits(Number(e.target.value))}
-                          className="w-full p-2 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500"
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block font-bold text-emerald-900 mb-1">Rate (Rs/Unit):</label>
+                        <label className="block font-bold text-emerald-900 mb-1">Full Charge Mileage (KM):</label>
                         <input
                           type="number"
-                          value={bikeElecRate}
-                          onChange={(e) => setBikeElecRate(Number(e.target.value))}
-                          className="w-full p-2 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500"
+                          value={bikeElecMileage}
+                          onChange={(e) => setBikeElecMileage(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
                         />
                       </div>
                     </div>
 
                     <div className="p-2.5 bg-white/80 border border-emerald-200 rounded-lg flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-emerald-900">Cost per Full Charge:</span>
+                      <span className="text-[11px] font-bold text-emerald-900">Cost per Full Charge ({bikeElecUnits} kWh):</span>
                       <strong className="text-sm font-black text-emerald-700">
                         {bikeElecUnits} kWh × Rs {bikeElecRate} = Rs {bikeElecFullCost.toFixed(1)}
                       </strong>
                     </div>
 
                     <p className="text-[10px] text-emerald-800">
-                      Power Cost per KM = Full Charge Cost ({bikeElecFullCost}) ÷ Range ({bikeElecMileage}) = <strong>Rs {elecCostPerKm.toFixed(2)} / km</strong>
+                      Power Cost per KM = Full Charge Cost ({bikeElecFullCost.toFixed(1)}) ÷ Mileage ({bikeElecMileage}) = <strong>Rs {elecCostPerKm.toFixed(2)} / km</strong>
                     </p>
                   </div>
                 )}
@@ -325,50 +344,105 @@ export const RiderProfitCalculator: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCarType('hybrid')}
+                      onClick={() => setCarType('ev')}
                       className={`py-2 rounded-lg flex items-center justify-center gap-2 transition-all ${
-                        carType === 'hybrid' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
+                        carType === 'ev' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <Zap className="w-4 h-4" /> Hybrid / E-Power Car
+                      <Zap className="w-4 h-4" /> Electric (EV) Car
                     </button>
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
-                    <span className="font-extrabold text-blue-950 uppercase text-xs flex items-center gap-1.5">
-                      <Car className="w-4 h-4 text-blue-600" /> {carType === 'hybrid' ? 'Hybrid Car Specs' : 'Petrol Car Specs'}
-                    </span>
-                    <span className="text-[11px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
-                      Rs {activeCarCostPerKm.toFixed(2)} / km
-                    </span>
-                  </div>
+                {carType === 'petrol' ? (
+                  <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
+                      <span className="font-extrabold text-blue-950 uppercase text-xs flex items-center gap-1.5">
+                        <Car className="w-4 h-4 text-blue-600" /> Petrol Car Specs
+                      </span>
+                      <span className="text-[11px] font-black text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                        Rs {activeCarCostPerKm.toFixed(2)} / km
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">Petrol Rate (Rs / Liter):</label>
-                      <input
-                        type="number"
-                        value={carType === 'hybrid' ? carHybridPrice : carPetrolPrice}
-                        onChange={(e) => carType === 'hybrid' ? setCarHybridPrice(Number(e.target.value)) : setCarPetrolPrice(Number(e.target.value))}
-                        className="w-full p-2.5 bg-white border border-blue-200 rounded-lg font-bold text-slate-900 outline-none focus:border-blue-500"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">Petrol Rate (Rs / Liter):</label>
+                        <input
+                          type="number"
+                          value={carPetrolPrice}
+                          onChange={(e) => setCarPetrolPrice(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-blue-200 rounded-lg font-bold text-slate-900 outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">Car Mileage (Km / Liter):</label>
+                        <input
+                          type="number"
+                          value={carPetrolAvg}
+                          onChange={(e) => setCarPetrolAvg(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-blue-200 rounded-lg font-bold text-slate-900 outline-none focus:border-blue-500"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">Car Mileage (Km / Liter):</label>
-                      <input
-                        type="number"
-                        value={carType === 'hybrid' ? carHybridAvg : carPetrolAvg}
-                        onChange={(e) => carType === 'hybrid' ? setCarHybridAvg(Number(e.target.value)) : setCarPetrolAvg(Number(e.target.value))}
-                        className="w-full p-2.5 bg-white border border-blue-200 rounded-lg font-bold text-slate-900 outline-none focus:border-blue-500"
-                      />
-                    </div>
+                    <p className="text-[10px] text-slate-600">
+                      Car Fuel Cost per KM = Petrol Rate ({carPetrolPrice}) ÷ Mileage ({carPetrolAvg}) = <strong>Rs {activeCarCostPerKm.toFixed(2)} / km</strong>
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-600">
-                    Car Fuel Cost per KM = Fuel Rate ({carType === 'hybrid' ? carHybridPrice : carPetrolPrice}) ÷ Mileage ({carType === 'hybrid' ? carHybridAvg : carPetrolAvg}) = <strong>Rs {activeCarCostPerKm.toFixed(2)} / km</strong>
-                  </p>
-                </div>
+                ) : (
+                  <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                      <span className="font-extrabold text-emerald-950 uppercase text-xs flex items-center gap-1.5">
+                        <Zap className="w-4 h-4 text-emerald-600" /> Electric (EV) Car Specs
+                      </span>
+                      <span className="text-[11px] font-black text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                        Rs {activeCarCostPerKm.toFixed(2)} / km
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-bold text-emerald-900 mb-1">Electric Price (Rs / kWh):</label>
+                        <input
+                          type="number"
+                          value={carElecRate}
+                          onChange={(e) => setCarElecRate(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-emerald-900 mb-1">Battery Units (kWh):</label>
+                        <input
+                          type="number"
+                          step={0.1}
+                          value={carElecUnits}
+                          onChange={(e) => setCarElecUnits(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-emerald-900 mb-1">Full Charge Mileage (KM):</label>
+                        <input
+                          type="number"
+                          value={carElecMileage}
+                          onChange={(e) => setCarElecMileage(Number(e.target.value))}
+                          className="w-full p-2.5 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500 text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-white/80 border border-emerald-200 rounded-lg flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-emerald-900">Cost per Full Charge ({carElecUnits} kWh):</span>
+                      <strong className="text-sm font-black text-emerald-700">
+                        {carElecUnits} kWh × Rs {carElecRate} = Rs {carElecFullCost.toFixed(1)}
+                      </strong>
+                    </div>
+
+                    <p className="text-[10px] text-emerald-800">
+                      Power Cost per KM = Full Charge Cost ({carElecFullCost.toFixed(1)}) ÷ Mileage ({carElecMileage}) = <strong>Rs {activeCarCostPerKm.toFixed(2)} / km</strong>
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -398,7 +472,7 @@ export const RiderProfitCalculator: React.FC = () => {
             <button
               type="button"
               onClick={handleSaveProfile}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-2.5 bg-[#16A36A] hover:bg-[#138a59] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {savedSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               {savedSuccess ? 'Profile Saved!' : 'Save Vehicle Specs'}
@@ -567,13 +641,13 @@ export const RiderProfitCalculator: React.FC = () => {
           </div>
 
           {/* FORMULA BREAKDOWN RESULT CARD */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md space-y-5">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <span className="text-xs font-extrabold uppercase text-slate-300">
+          <div className="bg-white border border-slate-200/90 text-[#071B2B] rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <span className="text-xs font-extrabold uppercase text-slate-500">
                 {vehicleType === 'Bike' ? 'Motorcycle Profit Result' : 'Car Profit Result'}
               </span>
               <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                activeNetProfit > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                activeNetProfit > 0 ? 'bg-emerald-50 text-[#16A36A] border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
               }`}>
                 {activeMargin.toFixed(0)}% Profit Margin
               </span>
@@ -581,30 +655,30 @@ export const RiderProfitCalculator: React.FC = () => {
 
             {/* Formula Visual Box */}
             <div className="space-y-2 text-xs">
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Formula Applied:</div>
-              <div className="p-3 bg-slate-800/90 rounded-xl border border-slate-700/80 font-mono text-[11px] text-slate-200">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Formula Applied:</div>
+              <div className="p-3 bg-[#F5F8F6] rounded-xl border border-slate-200 font-mono text-[11px] text-[#071B2B]">
                 Net Profit = Ride Fare − Platform Fee ({platformFeePercent}%) − {
                   vehicleType === 'Bike' 
                     ? (bikeEngineType === 'ev' ? 'EV Power Cost' : 'Petrol Fuel Cost')
-                    : (carType === 'hybrid' ? 'Hybrid Fuel Cost' : 'Petrol Fuel Cost')
+                    : (carType === 'ev' ? 'Electric Power Cost' : 'Petrol Fuel Cost')
                 }
               </div>
 
               {/* Step-by-Step Breakdown */}
               <div className="pt-2 space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-300">
+                <div className="flex justify-between text-slate-600">
                   <span>Ride Fare Offered:</span>
-                  <strong className="text-white">+ Rs {fare.toLocaleString()}</strong>
+                  <strong className="text-[#071B2B]">+ Rs {fare.toLocaleString()}</strong>
                 </div>
-                <div className="flex justify-between text-rose-400">
+                <div className="flex justify-between text-rose-600">
                   <span>Platform Fee ({platformFeePercent}%):</span>
                   <strong>− Rs {platformFeeAmount.toFixed(1)}</strong>
                 </div>
-                <div className="flex justify-between text-amber-400">
+                <div className="flex justify-between text-amber-600">
                   <span>
                     {vehicleType === 'Bike'
                       ? (bikeEngineType === 'ev' ? 'EV Power Cost' : 'Petrol Fuel Cost')
-                      : (carType === 'hybrid' ? 'Hybrid Fuel Cost' : 'Petrol Fuel Cost')
+                      : (carType === 'ev' ? 'Electric Power Cost' : 'Petrol Fuel Cost')
                     } ({distance} km @ Rs {activeCostPerKm.toFixed(2)}/km):
                   </span>
                   <strong>− Rs {activeFuelCost.toFixed(1)}</strong>
@@ -613,37 +687,37 @@ export const RiderProfitCalculator: React.FC = () => {
             </div>
 
             {/* Final Net Profit */}
-            <div className="pt-3 border-t border-slate-800 flex items-baseline justify-between">
+            <div className="pt-3 border-t border-slate-100 flex items-baseline justify-between">
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">
                   {vehicleType === 'Bike' ? 'Bike Net Profit Per Ride' : 'Car Net Profit Per Ride'}
                 </span>
-                <div className="text-3xl font-black text-emerald-400 mt-0.5">
+                <div className="text-3xl font-black text-[#16A36A] mt-0.5">
                   Rs {Math.round(activeNetProfit).toLocaleString('en-PK')}
                 </div>
               </div>
-              <div className="text-right text-[11px] text-slate-400">
+              <div className="text-right text-[11px] text-slate-600">
                 <span>Selected: </span>
-                <strong className="text-white capitalize block">
+                <strong className="text-[#071B2B] capitalize block">
                   {vehicleType === 'Bike' 
                     ? (bikeEngineType === 'ev' ? 'Electric (EV) Bike' : 'Petrol Bike')
-                    : (carType === 'hybrid' ? 'Hybrid Car' : 'Petrol Car')
+                    : (carType === 'ev' ? 'Electric (EV) Car' : 'Petrol Car')
                   }
                 </strong>
               </div>
             </div>
 
             {/* Income Projections */}
-            <div className="grid grid-cols-2 gap-2 bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 bg-[#F5F8F6] p-3 rounded-xl border border-slate-200 text-[11px]">
               <div>
-                <span className="text-slate-400 block text-[10px]">Daily ({vehicleType === 'Bike' ? '12 rides' : '8 rides'}):</span>
-                <strong className="text-emerald-400 font-black text-sm">
+                <span className="text-slate-500 block text-[10px]">Daily ({vehicleType === 'Bike' ? '12 rides' : '8 rides'}):</span>
+                <strong className="text-[#16A36A] font-black text-sm">
                   Rs {Math.round(activeNetProfit * (vehicleType === 'Bike' ? 12 : 8)).toLocaleString()}
                 </strong>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Monthly (26 days):</span>
-                <strong className="text-emerald-400 font-black text-sm">
+                <span className="text-slate-500 block text-[10px]">Monthly (26 days):</span>
+                <strong className="text-[#16A36A] font-black text-sm">
                   Rs {Math.round(activeNetProfit * (vehicleType === 'Bike' ? 12 : 8) * 26).toLocaleString()}
                 </strong>
               </div>
@@ -700,29 +774,29 @@ export const RiderProfitCalculator: React.FC = () => {
               </div>
             </div>
           ) : (
-            /* CAR COMPARISON: PETROL CAR VS HYBRID CAR */
+            /* CAR COMPARISON: PETROL CAR VS ELECTRIC CAR */
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                  <Car className="w-4 h-4 text-blue-600" /> Petrol Car vs Hybrid Car Profit
+                  <Car className="w-4 h-4 text-blue-600" /> Petrol Car vs Electric Car Profit
                 </h3>
                 <span className="text-[10px] text-slate-500 font-bold">Per {distance} km ride</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                {/* Hybrid Car Box */}
+                {/* Electric Car Box */}
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1 text-emerald-950">
                   <div className="flex items-center gap-1 font-extrabold text-[11px] text-emerald-800 uppercase">
-                    <Zap className="w-3.5 h-3.5 text-emerald-600" /> Hybrid Car Profit
+                    <Zap className="w-3.5 h-3.5 text-emerald-600" /> Electric Car Profit
                   </div>
                   <div className="text-xl font-black text-emerald-700">
-                    Rs {Math.round(carHybridNetProfit).toLocaleString()}
+                    Rs {Math.round(carEvNetProfit).toLocaleString()}
                   </div>
                   <span className="text-[10px] text-emerald-800 block">
-                    Fuel: Rs {carHybridRideCost.toFixed(1)} ({carHybridCostPerKm.toFixed(2)}/km)
+                    Power: Rs {carEvRideCost.toFixed(1)} ({carElecCostPerKm.toFixed(2)}/km)
                   </span>
                   <div className="text-[10px] text-slate-600 font-bold mt-1">
-                    Daily (8 rides): Rs {Math.round(carHybridNetProfit * 8).toLocaleString()}
+                    Daily (8 rides): Rs {Math.round(carEvNetProfit * 8).toLocaleString()}
                   </div>
                 </div>
 
@@ -745,9 +819,9 @@ export const RiderProfitCalculator: React.FC = () => {
 
               {/* Difference Banner */}
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-blue-950">
-                <span className="text-[11px] font-bold">Hybrid Extra Savings per Ride:</span>
+                <span className="text-[11px] font-bold">EV Extra Savings per Ride:</span>
                 <strong className="text-sm font-black text-blue-700">
-                  + Rs {Math.round(carHybridNetProfit - carPetrolNetProfit).toLocaleString()}
+                  + Rs {Math.round(carEvNetProfit - carPetrolNetProfit).toLocaleString()}
                 </strong>
               </div>
             </div>

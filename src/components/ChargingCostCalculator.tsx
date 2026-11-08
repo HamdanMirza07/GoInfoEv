@@ -72,22 +72,25 @@ export const ChargingCostCalculator: React.FC<ChargingCostCalculatorProps> = ({ 
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs hover-lift transition-all">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-mono font-bold">
-              <Zap className="w-4 h-4 text-emerald-500 animate-pulse-glow" />
-              Pakistan Tariff &amp; Bill Calculator
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold shadow-xs">
+              <Zap className="w-4 h-4 text-[#16A36A]" />
+              <span>Pakistan Tariff &amp; Bill Calculator</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               EV Bike Charging Cost Calculator
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 font-mono text-xs sm:text-sm max-w-3xl">
+            <p className="text-slate-600 font-normal text-xs sm:text-sm max-w-3xl leading-relaxed">
               Calculate exact monthly electricity units (kWh) and home bill cost for charging your EV motorcycle with optional solar panel net savings.
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/30 dark:to-slate-900 border border-emerald-200/60 dark:border-emerald-800/40">
+          <div className="shrink-0 flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <AnimatedBatteryCellSvg className="w-16 h-16 animate-float" />
             <AnimatedMotorHubSvg className="w-14 h-14 animate-spin-slow hidden sm:block opacity-80" />
           </div>

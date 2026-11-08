@@ -49,22 +49,25 @@ export const SolarCalculator: React.FC<SolarCalculatorProps> = ({ initialModelId
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs hover-lift transition-all">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-mono font-bold">
-              <Sun className="w-4 h-4 animate-spin-slow text-amber-500" />
-              Green Energy &amp; Solar Optimization Tool
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold shadow-xs">
+              <Sun className="w-4 h-4 text-[#F0B429]" />
+              <span>Green Energy &amp; Solar Optimization Tool</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               Solar EV Charging Calculator
             </h1>
-            <p className="text-slate-600 dark:text-slate-400 font-mono text-xs sm:text-sm max-w-3xl">
+            <p className="text-slate-600 font-normal text-xs sm:text-sm max-w-3xl leading-relaxed">
               Determine how much your rooftop solar panel setup contributes to free daily EV riding and calculate net-metering financial offsets.
             </p>
           </div>
-          <div className="shrink-0 flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/60 dark:from-amber-950/30 dark:to-slate-900 border border-amber-200/60 dark:border-amber-800/40">
+          <div className="shrink-0 flex items-center justify-center p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">
             <AnimatedSolarPVSvg className="w-20 h-20 animate-float" />
           </div>
         </div>

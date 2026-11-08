@@ -151,6 +151,33 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     setCurrentPage(1);
   }, [searchTerm, brandFilter, batteryFilter, priceTier, sortBy]);
 
+  // Hero Fleet Image Slider (Animated every 3 seconds, mixed brands)
+  const heroSliderModels = useMemo(() => {
+    const valid = EV_MODELS.filter(m => m.image && m.image.startsWith('http'));
+    const brandsList = ['Crown Electric', 'Vlektra', 'MS Jaguar', 'REVOO', 'OKLA', 'Jolta Electric', 'YJ Future', 'Yadea'];
+    const diverse: EVModel[] = [];
+    for (const b of brandsList) {
+      const found = valid.find(m => m.brand === b);
+      if (found) diverse.push(found);
+    }
+    for (const m of valid) {
+      if (diverse.length < 8 && !diverse.includes(m)) {
+        diverse.push(m);
+      }
+    }
+    return diverse;
+  }, []);
+
+  const [sliderIndex, setSliderIndex] = useState(0);
+
+  useEffect(() => {
+    if (heroSliderModels.length === 0) return;
+    const interval = setInterval(() => {
+      setSliderIndex(prev => (prev + 1) % heroSliderModels.length);
+    }, 3000); // 3 seconds interval
+    return () => clearInterval(interval);
+  }, [heroSliderModels.length]);
+
   const totalFiltered = filteredModels.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / itemsPerPage));
   const validCurrentPage = Math.min(currentPage, totalPages);
@@ -194,18 +221,20 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
   const toolCards = [
     {
       id: 'savings' as TabType,
-      title: 'Fuel Savings ROI',
+      title: 'Fuel Savings',
+      category: 'Calculators',
       tag: 'EV vs Petrol',
       badge: 'High ROI',
       description: 'Compare petrol bike fuel costs vs EV power. Monthly & yearly net savings with breakeven timeline.',
-      icon: <Calculator className="w-5 h-5 text-emerald-600" />,
+      icon: <Calculator className="w-5 h-5 text-[#16A36A]" />,
       accent: 'emerald',
       bgGlow: 'from-emerald-500/10 to-transparent',
-      borderColor: 'hover:border-emerald-500/60'
+      borderColor: 'hover:border-[#16A36A]/60'
     },
     {
       id: 'range' as TabType,
-      title: 'Range & Maps Estimator',
+      title: 'Range Estimator',
+      category: 'Battery & Range',
       tag: 'Live Physics',
       badge: 'Google Maps',
       description: 'Calculate realistic riding range based on passenger load, speed, terrain, tire pressure, and route elevation.',
@@ -216,7 +245,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'charging' as TabType,
-      title: 'Charging Cost & Tariffs',
+      title: 'Charging Cost',
+      category: 'Charging & Energy',
       tag: 'WAPDA 2026',
       badge: 'Tariff Slabs',
       description: 'Analyze electric bills and per-full-charge costs using verified Pakistani residential and commercial slabs.',
@@ -227,7 +257,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'solar' as TabType,
-      title: 'Solar Optimizer',
+      title: 'Solar Power',
+      category: 'Charging & Energy',
       tag: 'Zero Fuel Cost',
       badge: 'Net Metering',
       description: 'Size solar PV systems and inverter capacities to achieve 100% free sunshine-powered electric mobility.',
@@ -238,7 +269,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'battery' as TabType,
-      title: 'Battery Health & SOH',
+      title: 'Battery Health',
+      category: 'Battery & Range',
       tag: 'Degradation Model',
       badge: 'LFP / Graphene',
       description: 'Track cycle lifespan, State of Health (SOH) retention, thermal stress, and replacement timelines.',
@@ -249,7 +281,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'rider' as TabType,
-      title: 'Rider & Delivery Profit',
+      title: 'Rider Profit',
+      category: 'Business Tools',
       tag: 'Bykea / InDrive',
       badge: 'Gig Economy',
       description: 'Calculate net daily and monthly take-home earnings per trip after platform commission and energy cost.',
@@ -260,7 +293,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'comparison' as TabType,
-      title: 'Product Matrix & Compare',
+      title: 'Compare Bikes',
+      category: 'EV Research',
       tag: 'Side-by-Side',
       badge: '38 Bikes',
       description: 'Compare battery capacities, top speed, motor power, warranties, and pricing across multiple models.',
@@ -271,7 +305,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
     },
     {
       id: 'products' as TabType,
-      title: 'EV Fleet Catalog',
+      title: 'Fleet Catalog',
+      category: 'EV Research',
       tag: 'Verified Specs',
       badge: 'Official Datasheets',
       description: 'Detailed specification sheets, motor variants, braking systems, and genuine warranty terms.',
@@ -279,19 +314,33 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
       accent: 'cyan',
       bgGlow: 'from-cyan-500/10 to-transparent',
       borderColor: 'hover:border-cyan-500/60'
-    },
-    {
-      id: 'charging-stations' as TabType,
-      title: 'EV Charging Stations',
-      tag: 'Pakistan Nationwide',
-      badge: 'Fast DC & Motorways',
-      description: 'Find verified Fast DC & AC chargers across M-2, M-3, M-5, M-9, GT Road, Karachi, Lahore, Islamabad & 15+ cities.',
-      icon: <Zap className="w-5 h-5 text-emerald-600" />,
-      accent: 'emerald',
-      bgGlow: 'from-emerald-500/10 to-transparent',
-      borderColor: 'hover:border-emerald-500/60'
     }
   ];
+
+  const [toolSearch, setToolSearch] = useState('');
+  const [activeToolCategory, setActiveToolCategory] = useState('All Tools');
+
+  const toolCategories = [
+    'All Tools',
+    'Calculators',
+    'Battery & Range',
+    'Charging & Energy',
+    'Business Tools',
+    'EV Research'
+  ];
+
+  const filteredTools = useMemo(() => {
+    return toolCards.filter(tool => {
+      const matchesCategory = activeToolCategory === 'All Tools' || tool.category === activeToolCategory;
+      const query = toolSearch.toLowerCase().trim();
+      const matchesSearch = !query || 
+        tool.title.toLowerCase().includes(query) || 
+        tool.description.toLowerCase().includes(query) || 
+        tool.tag.toLowerCase().includes(query) ||
+        tool.badge.toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
+    });
+  }, [toolSearch, activeToolCategory]);
 
   return (
     <div className="space-y-12 pb-16">
@@ -302,14 +351,51 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
 
-        {/* Subtle Background EV Overlay */}
-        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 z-0 pointer-events-none opacity-20 overflow-hidden rounded-r-3xl">
-          <img 
-            src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&auto=format&fit=crop&q=80" 
-            alt="EV Background" 
-            className="w-full h-full object-cover object-center filter grayscale mix-blend-multiply"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#F5F8F6] via-[#F5F8F6]/80 to-transparent"></div>
+        {/* Animated Fleet Image Slider (Transparent / Cutout Style, 3s Rotation) */}
+        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 lg:w-[55%] z-0 pointer-events-none overflow-hidden flex items-center justify-end pr-4 sm:pr-12">
+          {heroSliderModels.map((m, idx) => {
+            const isActive = idx === sliderIndex;
+            return (
+              <div
+                key={m.id}
+                className={`absolute inset-0 flex items-center justify-end transition-all duration-1000 transform ${
+                  isActive 
+                    ? 'opacity-100 scale-100 translate-x-0' 
+                    : 'opacity-0 scale-95 translate-x-6 pointer-events-none'
+                }`}
+              >
+                <div className="relative w-full h-full flex items-center justify-center p-4">
+                  {/* Glowing backdrop */}
+                  <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-[#16A36A]/10 blur-3xl pointer-events-none"></div>
+                  
+                  {m.image && !m.image.includes('.jpg') ? (
+                    <img
+                      src={m.image}
+                      alt={getFullName(m)}
+                      className="max-h-[320px] sm:max-h-[400px] w-auto object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-64 h-64 text-[#16A36A]">
+                      <AnimatedEVBikeSvg className="w-full h-full" />
+                    </div>
+                  )}
+
+                  {/* Floating Model Badge */}
+                  <div className="absolute bottom-6 right-6 sm:right-10 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl px-4 py-2.5 shadow-lg flex items-center gap-3 pointer-events-auto">
+                    <div className="w-8 h-8 rounded-xl bg-[#16A36A]/10 text-[#16A36A] flex items-center justify-center font-black">
+                      ⚡
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-[#071B2B]">{getFullName(m)}</div>
+                      <div className="text-[10px] font-bold text-[#16A36A]">
+                        {m.price ? formatPKR(m.price) : 'Official Fleet Model'} • {m.rangeMax ? `${m.rangeMax} km Range` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="relative z-10 max-w-2xl space-y-5 text-left">
@@ -398,21 +484,23 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
       </section>
 
       {/* AI BOT ASSISTANT BANNER */}
-      <section className="bg-[#071B2B] text-white rounded-3xl p-5 sm:p-7 shadow-lg border border-[#172B3A] relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-[#16A36A]/10 rounded-full blur-3xl pointer-events-none"></div>
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] text-[#071B2B] p-5 sm:p-7 shadow-xs border border-slate-200/90">
+        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-[#16A36A]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-[#F0B429]/10 rounded-full blur-3xl pointer-events-none"></div>
+        
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16A36A]/20 text-[#16A36A] text-xs font-bold border border-[#16A36A]/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-[#071B2B] text-xs font-bold shadow-xs">
               <div className="relative flex items-center justify-center">
                 <Bike className="w-3.5 h-3.5 text-[#16A36A]" />
                 <Zap className="w-2 h-2 text-[#F0B429] fill-[#F0B429] absolute -top-1 -right-1" />
               </div>
-              <span>Automated EV Scooty AI Consultant • 24/7 Live</span>
+              <span className="text-[#071B2B]">Automated EV Scooty AI Consultant • 24/7 Live</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#071B2B]">
               Get Instant Answers to All Your EV Questions
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
               Have questions about EV scooty &amp; bike prices, battery warranty (LFP vs Graphene), K-Electric charging bills, or fuel savings? Ask our smart EV Scooty assistant anytime!
             </p>
           </div>
@@ -435,8 +523,8 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
         </div>
 
         {/* Quick Click Prompts */}
-        <div className="mt-4 pt-3 border-t border-[#172B3A] flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <span className="text-[11px] font-semibold text-slate-400 shrink-0">Popular questions:</span>
+        <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-[11px] font-semibold text-slate-500 shrink-0">Popular questions:</span>
           {[
             { label: '🛵 Best bike in Pakistan?', q: 'Which EV bike has the best range and build quality in Pakistan?' },
             { label: '💰 Petrol savings per month?', q: 'How much money can I save monthly compared to a 70cc petrol bike?' },
@@ -449,7 +537,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('open-ev-bot', { detail: { query: item.q } }));
               }}
-              className="text-xs shrink-0 bg-[#172B3A] hover:bg-[#16A36A]/20 text-slate-200 hover:text-white border border-slate-700 hover:border-[#16A36A] px-3 py-1 rounded-full transition-colors cursor-pointer"
+              className="text-xs shrink-0 bg-white hover:bg-[#16A36A]/10 text-slate-700 hover:text-[#071B2B] border border-slate-200 hover:border-[#16A36A] px-3 py-1 rounded-full transition-colors cursor-pointer shadow-2xs"
             >
               {item.label}
             </button>
@@ -458,106 +546,61 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
       </section>
 
       {/* ───────────────────────────────────────────────────────────
-          2. CORE INTERACTIVE ENGINES & TOOLS (8 CARDS)
+          2. PREMIUM EV TOOLS & CALCULATORS DASHBOARD
       ──────────────────────────────────────────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-6">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Interactive Engines &amp; Analytical Tools
+            <h2 className="text-2xl sm:text-3xl font-black text-[#071B2B] tracking-tight">
+              EV Tools &amp; Calculators
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Launch dedicated calculation engines customized for Pakistani road conditions and power tariffs.
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+              Everything you need to make smarter electric mobility decisions.
             </p>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
-            <Sparkles className="w-3.5 h-3.5" /> 8 Powerful Tools
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#16A36A] bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 shadow-2xs shrink-0">
+            <Sparkles className="w-3.5 h-3.5" />
+            {toolCards.length} Available Tools
           </span>
         </div>
 
-        {/* Subscription & Free Uses Status Bar */}
-        <div className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row items-center justify-between gap-3 ${
-          isSubscriber
-            ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 text-emerald-950'
-            : isPending
-            ? 'bg-amber-50 border-amber-200 text-amber-950'
-            : 'bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border-blue-200 text-slate-900'
-        }`}>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className={`p-2 rounded-xl text-white shrink-0 ${
-              isSubscriber ? 'bg-emerald-600' : isPending ? 'bg-amber-500' : 'bg-blue-600'
-            }`}>
-              <Zap className="w-4 h-4 fill-current" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black">
-                  {isSubscriber ? 'VIP Unlimited Access Active' : isPending ? 'Subscription Request Pending Review' : 'Calculator Free Trial'}
-                </span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                  isSubscriber 
-                    ? 'bg-emerald-200 text-emerald-900' 
-                    : isPending
-                    ? 'bg-amber-200 text-amber-900'
-                    : remainingUses === 0 
-                    ? 'bg-rose-100 text-rose-700' 
-                    : 'bg-blue-200 text-blue-900'
-                }`}>
-                  {isSubscriber ? 'All Tools Unlocked' : isPending ? 'Verification in Progress' : `${remainingUses} of ${maxFreeUses} Total Uses Remaining`}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {isSubscriber 
-                  ? 'Enjoy unrestricted calculations on range, charging bills, solar sizing, and rider profits.'
-                  : isPending
-                  ? 'Admin is verifying your transaction ID. Calculators will unlock once approved.'
-                  : 'Visitors get 7 total free tool uses combined across the suite (not 7 per tool). Afterwards, subscribe for PKR 499/mo.'}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => openSubscriptionModal()}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>{isSubscriber ? 'View Subscription' : 'Upgrade to VIP Pro'}</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Tool Card Grid (4 Columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {toolCards.map((tool) => (
             <button
               key={tool.id}
               onClick={() => onNavigate(tool.id)}
-              className={`group text-left bg-white border border-slate-200/90 ${tool.borderColor} rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/50 flex flex-col justify-between cursor-pointer relative overflow-hidden`}
+              className="group text-left bg-white border border-slate-200/90 hover:border-[#16A36A]/60 rounded-3xl p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 flex flex-col justify-between cursor-pointer relative overflow-hidden"
             >
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="p-2.5 rounded-xl bg-slate-100/90 group-hover:scale-110 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                  <div className="p-3 rounded-2xl bg-[#F5F8F6] group-hover:scale-110 transition-all text-[#16A36A]">
                     {tool.icon}
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
                     {tool.badge}
                   </span>
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 mb-0.5">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#16A36A] mb-1">
                     {tool.tag}
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-bold text-[#071B2B] group-hover:text-[#16A36A] transition-colors">
                     {tool.title}
                   </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 mt-1.5 leading-relaxed font-normal">
                     {tool.description}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900 group-hover:text-blue-600">
-                <span>Launch Engine</span>
-                <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between text-xs font-extrabold text-[#071B2B] group-hover:text-[#16A36A]">
+                <span>Open Tool</span>
+                <div className="w-7 h-7 rounded-full bg-[#F5F8F6] group-hover:bg-[#16A36A] group-hover:text-white flex items-center justify-center transition-all">
+                  <ArrowUpRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-all" />
+                </div>
               </div>
             </button>
           ))}
@@ -757,7 +800,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
             VIEW 1: MODERN CARD GRID VIEW
         ─────────────────────────────────────────────── */}
         {viewMode === 'grid' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {paginatedModels.map((ev) => {
               const avgRefRange = ((ev.rangeMin || 0) + (ev.rangeMax || ev.rangeMin || 0)) / 2;
               const realRange = avgRefRange * rangeAcc;
@@ -784,7 +827,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
                         <img
                           src={ev.image}
                           alt={getFullName(ev)}
-                          className="max-h-full max-w-full object-contain filter drop-shadow-xs group-hover:scale-105 transition-transform duration-300"
+                          className="max-h-full max-w-full object-contain mix-blend-multiply filter drop-shadow-xs group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -1014,7 +1057,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       itemsPerPage === size
-                        ? 'bg-blue-600 text-white shadow-xs font-black'
+                        ? 'bg-[#16A36A] text-white shadow-xs font-black'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
@@ -1066,7 +1109,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
                         onClick={() => goToPage(p as number)}
                         className={`min-w-[34px] h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           isCurrent
-                            ? 'bg-blue-600 text-white shadow-xs font-black ring-2 ring-blue-600/20'
+                            ? 'bg-[#16A36A] text-white shadow-xs font-black ring-2 ring-[#16A36A]/20'
                             : 'text-slate-700 hover:bg-slate-100 border border-slate-200/80'
                         }`}
                       >

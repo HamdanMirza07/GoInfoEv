@@ -156,18 +156,21 @@ export const BatteryHealthTracker: React.FC<BatteryHealthTrackerProps> = ({ init
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-mono font-bold mb-3">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              SOH Degradation &amp; Chemistry Analytics
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold mb-3 shadow-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#16A36A]" />
+              <span>SOH Degradation &amp; Chemistry Analytics</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               EV Battery Health &amp; Aging Tracker
             </h1>
-            <p className="text-slate-600 font-mono text-xs sm:text-sm mt-1 max-w-3xl">
+            <p className="text-slate-600 font-normal text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed">
               Model calendar aging, thermal heat penalties (Pak summers), Depth of Discharge (DOD), and cycle wear across LFP, NMC, and Graphene batteries.
             </p>
           </div>

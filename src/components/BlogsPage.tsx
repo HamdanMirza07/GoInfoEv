@@ -72,7 +72,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
   const [selectedLanguage, setSelectedLanguage] = useState<BlogLanguage>(() => {
     try {
       const saved = localStorage.getItem('goinfoev_blog_language');
-      if (saved === 'roman' || saved === 'urdu' || saved === 'en') {
+      if (saved === 'roman' || saved === 'en') {
         return saved;
       }
     } catch {
@@ -93,7 +93,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
   const categories = BLOG_CATEGORIES;
   const articles = ALL_BLOG_POSTS;
   const ui = UI_TRANSLATIONS[selectedLanguage];
-  const isUrdu = selectedLanguage === 'urdu';
+  const isUrdu = false;
   const isRoman = selectedLanguage === 'roman';
 
   const getCategoryBadgeClass = (category: string) => {
@@ -110,7 +110,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
     if (selectedLanguage === 'en') return cat;
     const trans = CATEGORY_TRANSLATIONS[cat];
     if (!trans) return cat;
-    return selectedLanguage === 'urdu' ? trans.urdu : trans.roman;
+    return trans.roman;
   };
 
   // Translate all articles for display according to active language
@@ -324,7 +324,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                 >
                   <span className="text-base sm:text-lg">{lang.flag}</span>
                   <div className="text-left flex flex-col">
-                    <span className={`leading-tight ${lang.id === 'urdu' ? 'font-urdu text-sm font-bold' : ''}`}>
+                    <span className="leading-tight">
                       {lang.label}
                     </span>
                     <span className={`text-[9px] font-semibold ${isSelected ? 'text-slate-900/80' : 'text-slate-400'}`}>
@@ -348,22 +348,27 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
       {/* ───────────────────────────────────────────────────────────
           HERO BANNER
       ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 text-white p-6 sm:p-10 shadow-xl">
-        
+      {/* ───────────────────────────────────────────────────────────
+          HERO BANNER
+      ──────────────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] border border-slate-200/90 text-[#071B2B] p-6 sm:p-10 shadow-xs">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
         {/* Top Bar: Mode & Language Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800/90">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-900/60 border border-blue-700/60 text-blue-300 text-xs font-bold w-fit">
-            <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/90 relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[#071B2B] text-xs font-bold w-fit shadow-xs">
+            <BookOpen className="w-3.5 h-3.5 text-[#16A36A]" />
             <span className={isUrdu ? 'font-urdu' : ''}>{ui.badge}</span>
           </div>
 
           {/* Bright Header Language Switcher */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="hidden lg:flex items-center gap-1.5 text-xs text-amber-300 font-bold mr-1">
-              <Languages className="w-4 h-4 text-emerald-400" />
+            <div className="hidden lg:flex items-center gap-1.5 text-xs text-[#071B2B] font-bold mr-1">
+              <Languages className="w-4 h-4 text-[#16A36A]" />
               <span>{isUrdu ? 'زبان منتخب کریں:' : 'Reading Mode:'}</span>
             </div>
-            <div className="inline-flex p-1 bg-slate-900 border-2 border-emerald-500/40 rounded-2xl gap-1 shadow-md shadow-emerald-500/10">
+            <div className="inline-flex p-1 bg-white border border-slate-300 rounded-2xl gap-1 shadow-xs">
               {BLOG_LANGUAGES.map((lang) => {
                 const isSelected = selectedLanguage === lang.id;
                 return (
@@ -372,12 +377,12 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                     onClick={() => handleLanguageChange(lang.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                       isSelected 
-                        ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 shadow-md font-black ring-1 ring-white' 
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                        ? 'bg-[#16A36A] text-white shadow-xs font-black' 
+                        : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <span className="text-sm">{lang.flag}</span>
-                    <span className={lang.id === 'urdu' ? 'font-urdu text-sm font-semibold' : ''}>
+                    <span>
                       {lang.label}
                     </span>
                   </button>
@@ -388,28 +393,28 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Hero Title & Subtitle */}
-        <div className={`max-w-3xl space-y-4 pt-6 ${isUrdu ? 'text-right' : 'text-left'}`} dir={isUrdu ? 'rtl' : 'ltr'}>
-          <h1 className={`font-black tracking-tight ${isUrdu ? 'font-urdu text-3xl sm:text-4xl lg:text-5xl leading-[1.8]' : 'text-3xl sm:text-4xl lg:text-5xl leading-tight'}`}>
+        <div className={`relative z-10 max-w-3xl space-y-4 pt-6 ${isUrdu ? 'text-right' : 'text-left'}`} dir={isUrdu ? 'rtl' : 'ltr'}>
+          <h1 className={`font-black tracking-tight text-[#071B2B] ${isUrdu ? 'font-urdu text-3xl sm:text-4xl lg:text-5xl leading-[1.8]' : 'text-3xl sm:text-4xl lg:text-5xl leading-tight'}`}>
             <span>{ui.heroTitle} </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">
+            <span className="text-[#16A36A]">
               {ui.heroHighlight}
             </span>
           </h1>
-          <p className={`text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl ${isUrdu ? 'font-urdu leading-[2.2] text-slate-200' : ''}`}>
+          <p className={`text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-normal ${isUrdu ? 'font-urdu leading-[2.2] text-slate-700' : ''}`}>
             {ui.heroSubtitle}
           </p>
 
           {/* Active Font / Reading Mode Pill */}
           <div className="flex items-center gap-2 pt-1">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/50 text-emerald-300">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-white border border-slate-200 text-[#16A36A] shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#16A36A]" />
               <span>{isUrdu ? 'خالص اردو نستعلیق فونٹ فعال ہے' : isRoman ? 'Roman Urdu Reading Mode Active' : 'English Edition Active'}</span>
             </span>
           </div>
         </div>
 
         {/* Search Input Box */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
+        <div className="relative z-10 mt-8 pt-6 border-t border-slate-200/90 space-y-3">
           <div className="relative max-w-xl">
             <Search className={`w-4 h-4 text-slate-400 absolute top-1/2 -translate-y-1/2 ${isUrdu ? 'right-3.5' : 'left-3.5'}`} />
             <input
@@ -418,14 +423,14 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={ui.searchPlaceholder}
               dir={isUrdu ? 'rtl' : 'ltr'}
-              className={`w-full py-2.5 rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none ${
+              className={`w-full py-2.5 rounded-2xl bg-white border border-slate-300 text-slate-800 placeholder-slate-400 text-xs sm:text-sm focus:ring-2 focus:ring-[#16A36A] focus:outline-none shadow-xs font-medium ${
                 isUrdu ? 'pr-10 pl-4 font-urdu text-right' : 'pl-10 pr-4'
               }`}
             />
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery('')}
-                className={`absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-white ${isUrdu ? 'left-3' : 'right-3'}`}
+                className={`absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 ${isUrdu ? 'left-3' : 'right-3'}`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -463,7 +468,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
           {selectedCategory !== 'All' && (
             <button
               onClick={() => setSelectedCategory('All')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer w-fit ${isUrdu ? 'font-urdu' : ''}`}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#16A36A] hover:bg-[#138a59] text-white font-bold text-xs shadow-sm transition-all cursor-pointer w-fit ${isUrdu ? 'font-urdu' : ''}`}
             >
               <X className="w-3.5 h-3.5" />
               <span>{isUrdu ? 'تمام گائیڈز دیکھیں (Show All)' : isRoman ? 'Tamam Guides Dekhein (All)' : 'Show All 40 Guides'}</span>
@@ -534,13 +539,13 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-400/40'
+                    ? 'bg-[#16A36A] text-white shadow-md shadow-[#16A36A]/30 ring-2 ring-[#16A36A]/40'
                     : 'bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 shadow-2xs'
                 }`}
               >
                 <span className={isUrdu ? 'font-urdu' : ''}>{label}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  isSelected ? 'bg-blue-950/60 text-blue-100' : 'bg-slate-100 text-slate-500'
+                  isSelected ? 'bg-emerald-950/60 text-emerald-100' : 'bg-slate-100 text-slate-500'
                 }`}>
                   {count}
                 </span>
@@ -671,7 +676,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                         title={`Switch to ${lang.label}`}
                       >
                         <span>{lang.flag}</span>
-                        <span className={lang.id === 'urdu' ? 'font-urdu font-bold' : ''}>{lang.label}</span>
+                        <span>{lang.label}</span>
                       </button>
                     );
                   })}

@@ -48,7 +48,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ activeTab, set
   const isHomeActive = activeTab === 'home';
   const isExploreActive = activeTab === 'products';
   const isCompareActive = activeTab === 'comparison';
-  const isToolActive = ['savings', 'range', 'charging', 'battery', 'solar', 'rider', 'charging-stations'].includes(activeTab) && !toolsSheetOpen && !moreSheetOpen;
+  const isToolActive = ['savings', 'range', 'charging', 'battery', 'solar', 'rider'].includes(activeTab) && !toolsSheetOpen && !moreSheetOpen;
   const isMoreActive = ['blogs', 'content', 'about', 'contact', 'admin', 'user-dashboard'].includes(activeTab) || moreSheetOpen;
 
   const toolItems: { id: TabType; label: string; desc: string; icon: React.ReactNode; badge?: string }[] = [
@@ -58,7 +58,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ activeTab, set
     { id: 'battery', label: 'Battery SOH & Lifespan', desc: 'LFP & Graphene degradation tracker', icon: <ShieldCheck className="w-4 h-4 text-emerald-300" /> },
     { id: 'solar', label: 'Solar Power Calculator', desc: 'Solar Panel Sizing & Zero Unit Cost', icon: <Sun className="w-4 h-4 text-[#F0B429]" /> },
     { id: 'rider', label: 'Delivery Rider Earnings', desc: 'Bykea, InDrive & Foodpanda Earnings', icon: <Bike className="w-4 h-4 text-amber-400" />, badge: 'Gig' },
-    { id: 'charging-stations', label: 'EV Charging Stations', desc: 'Find Fast DC Chargers across Pakistan', icon: <Globe className="w-4 h-4 text-[#16A36A]" />, badge: 'Fast DC' },
   ];
 
   const moreItems: { id: TabType; label: string; desc: string; icon: React.ReactNode; badge?: string }[] = [

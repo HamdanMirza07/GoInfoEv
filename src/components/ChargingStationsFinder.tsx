@@ -136,30 +136,32 @@ export const ChargingStationsFinder: React.FC<ChargingStationsFinderProps> = ({ 
       {/* ───────────────────────────────────────────────────────────
           HERO BANNER & SEARCH HEADER
       ──────────────────────────────────────────────────────────── */}
-      <section className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white p-6 sm:p-10 shadow-2xl border border-slate-800">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      {/* ───────────────────────────────────────────────────────────
+          HERO BANNER & SEARCH HEADER
+      ──────────────────────────────────────────────────────────── */}
+      <section className="relative rounded-3xl overflow-hidden bg-[#F5F8F6] text-[#071B2B] p-6 sm:p-10 shadow-xs border border-slate-200/90">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#16A36A]/12 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#F0B429]/12 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="relative z-10 max-w-4xl">
           {/* Tag / Live Status */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30 mb-4 shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-[#071B2B] text-xs font-bold border border-slate-200 mb-4 shadow-xs">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A36A] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#16A36A]"></span>
             </span>
             <span>Pakistan Nationwide Official EV Charging Network</span>
-            <span className="text-[10px] font-black uppercase bg-emerald-400 text-slate-950 px-2 py-0.2 rounded-full">
+            <span className="text-[10px] font-black uppercase bg-[#16A36A] text-white px-2 py-0.5 rounded-full">
               Live Tracker
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-            Pakistan EV <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Charging Stations</span> &amp; Motorway Tracker
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#071B2B] leading-tight">
+            Pakistan EV <span className="text-[#16A36A]">Charging Stations</span> &amp; Motorway Tracker
           </h1>
 
-          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
-            پاکستان بھر میں موجود تمام <strong>فاسٹ ڈی سی چارجرز (Fast DC 60kW - 180kW)</strong>، موٹروے سروس ایریاز (M-2, M-3, M-5, M-9)، جی ٹی روڈ اور بڑے شہروں (کراچی، لاہور، اسلام آباد، پشاور، ملتان، فیصل آباد) کے تصدیق شدہ چارجنگ اسٹیشنز تلاش کریں۔ 
-            ریئل ٹائم پاور (kW)، کنیکٹر ٹائپس (CCS2, GBT, Type-2)، فی یونٹ قیمت اور گوگل میپس نیویگیشن ایک کلک پر حاصل کریں۔
+          <p className="mt-3 sm:mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl font-normal">
+            Find verified <strong>Fast DC Chargers (60kW - 180kW)</strong> across Pakistan, including motorway service areas (M-2, M-3, M-5, M-9), GT Road, and major hubs in Karachi, Lahore, Islamabad, Peshawar, Multan, and Faisalabad. Access real-time power outputs, connector types (CCS2, GBT, Type-2), tariff rates, and Google Maps navigation in one click.
           </p>
 
           {/* Quick Search Bar */}
@@ -171,12 +173,12 @@ export const ChargingStationsFinder: React.FC<ChargingStationsFinderProps> = ({ 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by city, motorway, area or brand (e.g. Bhera M-2, Sukheki, F-7, DHA, Hubco, Shell)..."
-                className="w-full pl-12 pr-12 py-3.5 sm:py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-slate-900/95 transition-all shadow-inner"
+                className="w-full pl-12 pr-12 py-3.5 sm:py-4 rounded-2xl bg-white border border-slate-300 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#16A36A] transition-all shadow-xs font-medium"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 text-xs text-slate-300 hover:text-white px-2.5 py-1.5 bg-white/15 rounded-xl cursor-pointer"
+                  className="absolute right-3 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 bg-slate-100 rounded-xl cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -186,37 +188,37 @@ export const ChargingStationsFinder: React.FC<ChargingStationsFinderProps> = ({ 
         </div>
 
         {/* Highlight Stats Row */}
-        <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-xl sm:text-2xl font-black text-emerald-400 flex items-center gap-1.5">
+        <div className="mt-8 pt-6 border-t border-slate-200/90 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="text-xl sm:text-2xl font-black text-[#16A36A] flex items-center gap-1.5">
               <Zap className="w-5 h-5" />
               <span>{CHARGING_STATIONS.length}+ Verified</span>
             </div>
-            <div className="text-xs text-slate-300 font-semibold mt-0.5">Nationwide EV Stations</div>
+            <div className="text-xs text-slate-600 font-semibold mt-0.5">Nationwide EV Stations</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-xl sm:text-2xl font-black text-cyan-300 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="text-xl sm:text-2xl font-black text-blue-600 flex items-center gap-1.5">
               <Fuel className="w-5 h-5" />
               <span>Up to 180 kW</span>
             </div>
-            <div className="text-xs text-slate-300 font-semibold mt-0.5">Ultra-Fast Liquid Cooled DC</div>
+            <div className="text-xs text-slate-600 font-semibold mt-0.5">Ultra-Fast Liquid Cooled DC</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-xl sm:text-2xl font-black text-amber-300 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="text-xl sm:text-2xl font-black text-amber-600 flex items-center gap-1.5">
               <Compass className="w-5 h-5" />
               <span>M-2, M-3, M-5, M-9</span>
             </div>
-            <div className="text-xs text-slate-300 font-semibold mt-0.5">Intercity Motorway Corridors</div>
+            <div className="text-xs text-slate-600 font-semibold mt-0.5">Intercity Motorway Corridors</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="text-xl sm:text-2xl font-black text-teal-300 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="text-xl sm:text-2xl font-black text-teal-600 flex items-center gap-1.5">
               <Bike className="w-5 h-5" />
               <span>E-Scooters &amp; Cars</span>
             </div>
-            <div className="text-xs text-slate-300 font-semibold mt-0.5">Dual 2-Wheeler / 4-Wheeler</div>
+            <div className="text-xs text-slate-600 font-semibold mt-0.5">Dual 2-Wheeler / 4-Wheeler</div>
           </div>
         </div>
       </section>
@@ -625,16 +627,16 @@ export const ChargingStationsFinder: React.FC<ChargingStationsFinderProps> = ({ 
       {/* ───────────────────────────────────────────────────────────
           SUBMISSION / COMMUNITY INQUIRY BANNER
       ──────────────────────────────────────────────────────────── */}
-      <section className="rounded-3xl bg-slate-900 text-white p-6 sm:p-8 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <section className="rounded-3xl bg-[#F5F8F6] text-[#071B2B] p-6 sm:p-8 border border-slate-200/90 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs relative overflow-hidden">
         <div className="space-y-2 max-w-xl text-left">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold">
-            <Sparkles className="w-3 h-3" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#071B2B] text-xs font-bold border border-slate-200 shadow-xs">
+            <Sparkles className="w-3 h-3 text-[#16A36A]" />
             <span>Community EV Crowdsource Pakistan</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-black text-white">
+          <h3 className="text-xl sm:text-2xl font-black text-[#071B2B]">
             Have an EV Charger or New Station to Add?
           </h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
             If you operate a commercial DC fast charger, hotel AC destination port, or know a newly installed charging point on Pakistan Motorways or GT Road, submit details for immediate inclusion.
           </p>
         </div>
@@ -644,9 +646,9 @@ export const ChargingStationsFinder: React.FC<ChargingStationsFinderProps> = ({ 
             href="https://wa.me/923036001701?text=Hello%20Hamdan,%20I%20would%20like%20to%20add/report%20an%20EV%20Charging%20Station%20in%20Pakistan"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer active:scale-95"
+            className="px-5 py-3 rounded-2xl bg-[#16A36A] hover:bg-[#138a59] text-white font-extrabold text-xs sm:text-sm transition-all shadow-lg shadow-[#16A36A]/20 flex items-center gap-2 cursor-pointer active:scale-95"
           >
-            <MessageCircle className="w-4 h-4 fill-slate-950" />
+            <MessageCircle className="w-4 h-4 fill-white text-[#16A36A]" />
             <span>Submit via WhatsApp (+92 303 6001701)</span>
           </a>
 

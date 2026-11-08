@@ -133,18 +133,21 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16A36A]/10 text-[#16A36A] border border-[#16A36A]/30 text-xs font-bold mb-3">
-              <FileText className="w-3.5 h-3.5" />
-              EV Model Specification Explorer
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold mb-3 shadow-xs">
+              <FileText className="w-3.5 h-3.5 text-[#16A36A]" />
+              <span>EV Model Specification Explorer</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               Pakistan EV Fleet Catalog
             </h1>
-            <p className="text-slate-600 text-xs sm:text-sm mt-1">
+            <p className="text-slate-600 text-xs sm:text-sm mt-1 font-normal">
               Complete calibrated datasheet of {activeModels.length} verified EV motorcycle models in Pakistan.
             </p>
           </div>
@@ -283,7 +286,7 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {paginatedModels.map((model) => (
           <div
             key={model.id}

@@ -24,6 +24,7 @@ import { CalculatorGuard } from './components/CalculatorGuard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 function getInitialTab(): TabType {
   if (typeof window === 'undefined') return 'home';
@@ -84,7 +85,7 @@ export default function App() {
   return (
     <CatalogProvider>
       <SubscriptionProvider>
-        <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900 font-sans flex flex-col selection:bg-blue-600 selection:text-white">
+        <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F5F8F6] text-[#071B2B] font-sans flex flex-col selection:bg-[#16A36A] selection:text-white">
         {/* Top Navbar */}
         <Navbar activeTab={activeTab} setActiveTab={handleNavigateWithScroll} />
 
@@ -185,6 +186,9 @@ export default function App() {
 
         {/* Footer */}
         <Footer onNavigate={handleNavigateWithScroll} />
+
+        {/* Offline Connectivity Status Badge */}
+        <OfflineIndicator />
       </div>
     </SubscriptionProvider>
   </CatalogProvider>

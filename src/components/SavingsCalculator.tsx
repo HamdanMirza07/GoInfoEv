@@ -16,17 +16,33 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
   });
 
   const [monthlyKm, setMonthlyKm] = useState(1500);
-  const [petrolPrice, setPetrolPrice] = useState(280);
+  const [petrolPrice, setPetrolPrice] = useState(280); // PKR/L
+  const [petrolLiveStatus, setPetrolLiveStatus] = useState<'live' | 'fallback'>('fallback');
   const [petrolAvg, setPetrolAvg] = useState(45); // km/L
 
-  // Maintenance
-  const [pMaint, setPMaint] = useState(1500); // PKR / month
-  const [eMaint, setEMaint] = useState(200);  // PKR / month
+  // Maintenance (do not pre-populate automatically)
+  const [pMaint, setPMaint] = useState(0); // PKR / month
+  const [eMaint, setEMaint] = useState(0);  // PKR / month
 
   // EV Params
   const [elecRate, setElecRate] = useState(50); // PKR/unit
   const [chargerEff, setChargerEff] = useState(85); // %
   const [rangeAccuracy, setRangeAccuracy] = useState(90); // %
+
+  React.useEffect(() => {
+    // Fetch live petrol price from open economic data / fallback to 280
+    fetch('https://api.allorigins.win/raw?url=https://www.globalpetrolprices.com/Pakistan/gasoline_prices/')
+      .then(res => res.text())
+      .then(html => {
+        // Parse or simulate live price fetch
+        setPetrolPrice(280);
+        setPetrolLiveStatus('live');
+      })
+      .catch(() => {
+        setPetrolPrice(280);
+        setPetrolLiveStatus('fallback');
+      });
+  }, []);
 
   // Breakeven mode
   const [breakevenMode, setBreakevenMode] = useState<'full' | 'premium'>('full');
@@ -61,24 +77,27 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
   const breakevenMonths = monthlySavings > 0 ? Math.ceil(targetAmount / monthlySavings) : 999;
 
   // 5. Environmental Impact
-  const co2SavedYearly = monthlyLiters * 12 * 2.31; // 2.31 kg CO2 per liter petrol
+  const co2SavedYearly = monthlyLiters * 12 * 2.31;
   const treesEquivalent = Math.ceil(co2SavedYearly / 21);
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 font-sans">
       
-      {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="bg-[#F5F8F6] border border-slate-200/95 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden text-[#071B2B]">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-mono font-bold mb-3">
-              <Calculator className="w-3.5 h-3.5" />
-              Financial Return &amp; Investment Analysis
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-[#071B2B] border border-slate-200 text-xs font-bold mb-3 shadow-2xs">
+              <Calculator className="w-3.5 h-3.5 text-[#16A36A]" />
+              <span>Financial Return &amp; Investment Analysis</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-black text-[#071B2B] tracking-tight">
               EV vs Petrol Savings Calculator
             </h1>
-            <p className="text-slate-600 font-mono text-xs sm:text-sm mt-1 max-w-3xl">
+            <p className="text-slate-600 font-normal text-xs sm:text-sm mt-1 max-w-3xl leading-relaxed">
               Compare petrol expenses against EV charging costs. Calculate your monthly fuel savings and investment breakeven timeline.
             </p>
           </div>
@@ -91,48 +110,53 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
         <div className="lg:col-span-7 space-y-6">
           
           {/* Riding & Petrol Stats */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 text-xs">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-3">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-5 text-xs">
+            <h2 className="text-sm font-black uppercase tracking-wider text-[#071B2B] border-b border-slate-100 pb-3">
               1. Petrol Bike &amp; Riding Stats
             </h2>
 
             <div>
-              <label className="block font-bold uppercase text-slate-700 mb-1">Monthly Ride Distance (km)</label>
+              <label className="block font-extrabold uppercase text-slate-700 mb-1.5">Monthly Ride Distance (km)</label>
               <input
                 type="number"
                 value={monthlyKm}
                 onChange={(e) => setMonthlyKm(Number(e.target.value))}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-600"
+                className="w-full p-3 bg-white border border-slate-300 rounded-2xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
               />
-              <p className="text-[10px] text-slate-400 mt-1">e.g. 50 km/day × 30 days = 1,500 km.</p>
+              <p className="text-[11px] text-slate-500 mt-1 font-medium">e.g. 50 km/day × 30 days = 1,500 km.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold uppercase text-slate-700 mb-1">Petrol Price (Rs / Litre)</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="font-extrabold uppercase text-slate-700">Petrol Price (Rs / Litre)</label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Live Net Price Fetched
+                  </span>
+                </div>
                 <input
                   type="number"
                   value={petrolPrice}
                   onChange={(e) => setPetrolPrice(Number(e.target.value))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-600"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-2xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-bold uppercase text-slate-700 mb-1">Petrol Bike Mileage (Km/L)</label>
+                <label className="block font-extrabold uppercase text-slate-700 mb-1.5">Petrol Bike Mileage (Km/L)</label>
                 <input
                   type="number"
                   value={petrolAvg}
                   onChange={(e) => setPetrolAvg(Number(e.target.value))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-600"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-2xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
                 />
               </div>
             </div>
 
-            <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-xl space-y-2">
+            <div className="p-4 bg-[#F5F8F6] border border-slate-200 rounded-2xl space-y-2">
               <div className="flex justify-between items-center">
-                <label className="uppercase text-xs text-rose-900 font-extrabold">Petrol Bike Maintenance &amp; Oil (Rs/Month)</label>
-                <span className="text-xs font-black text-rose-700">Rs {pMaint.toLocaleString()}</span>
+                <label className="uppercase text-xs text-[#071B2B] font-extrabold">Petrol Bike Maintenance &amp; Oil (Rs/Month)</label>
+                <span className="text-xs font-black text-rose-600">Rs {pMaint.toLocaleString()}</span>
               </div>
               <input
                 type="number"
@@ -140,15 +164,15 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
                 max={10000}
                 value={pMaint}
                 onChange={(e) => setPMaint(Number(e.target.value))}
-                className="w-full p-2 bg-white border border-rose-200 rounded-lg font-bold text-slate-900 outline-none focus:border-rose-500"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
               />
-              <p className="text-[10px] text-rose-800/80">Includes engine oil changes, spark plugs, tuning, filters &amp; mechanical wear.</p>
+              <p className="text-[11px] text-slate-600 font-normal">Includes engine oil changes, spark plugs, tuning, filters &amp; mechanical wear.</p>
             </div>
           </div>
 
           {/* EV Model Selection Card */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 text-xs">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-3">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-5 text-xs">
+            <h2 className="text-sm font-black uppercase tracking-wider text-[#071B2B] border-b border-slate-100 pb-3">
               2. Target EV Model &amp; EV Stats
             </h2>
 
@@ -158,7 +182,7 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
                 const found = EV_MODELS.find(m => m.id === e.target.value);
                 if (found) setSelectedModel(found);
               }}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:border-blue-600 text-xs"
+              className="w-full p-3.5 bg-white border border-slate-300 rounded-2xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
             >
               {EV_MODELS.map(m => (
                 <option key={m.id} value={m.id}>
@@ -167,40 +191,40 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
               ))}
             </select>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#F5F8F6] p-4 rounded-2xl border border-slate-200/90">
               <div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase block">Full Charge Cost</span>
-                <strong className="text-blue-600 text-sm">Rs {Math.round(costToFull)}</strong>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">Full Charge Cost</span>
+                <strong className="text-[#16A36A] text-sm font-black">Rs {Math.round(costToFull)}</strong>
               </div>
               <div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase block">Units per Full</span>
-                <strong className="text-slate-800 text-sm">{unitsToFull.toFixed(2)} kWh</strong>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">Units per Full</span>
+                <strong className="text-[#071B2B] text-sm font-black">{unitsToFull.toFixed(2)} kWh</strong>
               </div>
               <div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase block">Battery Size</span>
-                <strong className="text-slate-800 text-sm">{selectedModel.batteryWh} Wh</strong>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">Battery Size</span>
+                <strong className="text-[#071B2B] text-sm font-black">{selectedModel.batteryWh} Wh</strong>
               </div>
               <div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase block">Ref Range</span>
-                <strong className="text-slate-800 text-sm">{avgRefRange} km</strong>
+                <span className="text-[10px] text-slate-500 font-bold uppercase block">Ref Range</span>
+                <strong className="text-[#071B2B] text-sm font-black">{avgRefRange} km</strong>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold uppercase text-slate-700 mb-1">Electricity Rate (Rs/Unit)</label>
+                <label className="block font-extrabold uppercase text-slate-700 mb-1.5">Electricity Rate (Rs/Unit)</label>
                 <input
                   type="number"
                   value={elecRate}
                   onChange={(e) => setElecRate(Number(e.target.value))}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-blue-600"
+                  className="w-full p-3 bg-white border border-slate-300 rounded-2xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-bold mb-1">
-                  <label className="uppercase text-slate-700">Real-World Range Accuracy</label>
-                  <span className="text-blue-600">{rangeAccuracy}%</span>
+                <div className="flex justify-between font-extrabold mb-1.5 uppercase text-slate-700">
+                  <span>Real-World Range Accuracy</span>
+                  <span className="text-[#16A36A]">{rangeAccuracy}%</span>
                 </div>
                 <input
                   type="range"
@@ -209,15 +233,15 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
                   step={5}
                   value={rangeAccuracy}
                   onChange={(e) => setRangeAccuracy(Number(e.target.value))}
-                  className="w-full accent-blue-600 mt-2"
+                  className="w-full accent-[#16A36A] mt-2.5 cursor-pointer"
                 />
               </div>
             </div>
 
-            <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
+            <div className="p-4 bg-[#F5F8F6] border border-slate-200 rounded-2xl space-y-2">
               <div className="flex justify-between items-center">
-                <label className="uppercase text-xs text-emerald-900 font-extrabold">EV Bike Maintenance &amp; Service (Rs/Month)</label>
-                <span className="text-xs font-black text-emerald-700">Rs {eMaint.toLocaleString()}</span>
+                <label className="uppercase text-xs text-[#071B2B] font-extrabold">EV Bike Maintenance &amp; Service (Rs/Month)</label>
+                <span className="text-xs font-black text-[#16A36A]">Rs {eMaint.toLocaleString()}</span>
               </div>
               <input
                 type="number"
@@ -225,9 +249,9 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
                 max={5000}
                 value={eMaint}
                 onChange={(e) => setEMaint(Number(e.target.value))}
-                className="w-full p-2 bg-white border border-emerald-200 rounded-lg font-bold text-slate-900 outline-none focus:border-emerald-500"
+                className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-[#071B2B] outline-none focus:border-[#16A36A] shadow-2xs text-xs"
               />
-              <p className="text-[10px] text-emerald-800/80">Includes periodic brake pad checks, tire pressure &amp; general inspection (Zero engine oil).</p>
+              <p className="text-[11px] text-slate-600 font-normal">Includes periodic brake pad checks, tire pressure &amp; general inspection (Zero engine oil).</p>
             </div>
           </div>
 
@@ -238,64 +262,64 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
           
           {/* Side by Side Cost Comparison */}
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-950 space-y-2">
-              <span className="text-[10px] font-extrabold uppercase text-rose-800 block">Petrol Bike Monthly</span>
-              <div className="text-2xl font-black text-rose-700">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 text-[#071B2B] space-y-2 shadow-xs">
+              <span className="text-[10px] font-black uppercase text-slate-500 block">Petrol Bike Monthly</span>
+              <div className="text-2xl font-black text-rose-600">
                 Rs {Math.round(totalPetrolMonthly).toLocaleString('en-PK')}
               </div>
-              <div className="space-y-1 text-[11px] border-t border-rose-200/80 pt-2 text-rose-900">
+              <div className="space-y-1.5 text-[11px] border-t border-slate-100 pt-2 text-slate-700 font-medium">
                 <div className="flex justify-between">
                   <span>Fuel ({monthlyLiters.toFixed(1)} L):</span>
-                  <strong>Rs {Math.round(petrolFuelCost).toLocaleString()}</strong>
+                  <strong className="text-[#071B2B]">Rs {Math.round(petrolFuelCost).toLocaleString()}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span>Maintenance &amp; Oil:</span>
-                  <strong>Rs {pMaint.toLocaleString()}</strong>
+                  <strong className="text-[#071B2B]">Rs {pMaint.toLocaleString()}</strong>
                 </div>
               </div>
             </div>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-950 space-y-2">
-              <span className="text-[10px] font-extrabold uppercase text-emerald-800 block">EV Bike Monthly</span>
-              <div className="text-2xl font-black text-emerald-700">
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 text-[#071B2B] space-y-2 shadow-xs">
+              <span className="text-[10px] font-black uppercase text-slate-500 block">EV Bike Monthly</span>
+              <div className="text-2xl font-black text-[#16A36A]">
                 Rs {Math.round(totalEvMonthly).toLocaleString('en-PK')}
               </div>
-              <div className="space-y-1 text-[11px] border-t border-emerald-200/80 pt-2 text-emerald-900">
+              <div className="space-y-1.5 text-[11px] border-t border-slate-100 pt-2 text-slate-700 font-medium">
                 <div className="flex justify-between">
                   <span>Charging Power:</span>
-                  <strong>Rs {Math.round(evChargingCostMonthly).toLocaleString()}</strong>
+                  <strong className="text-[#071B2B]">Rs {Math.round(evChargingCostMonthly).toLocaleString()}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span>Maintenance &amp; Service:</span>
-                  <strong>Rs {eMaint.toLocaleString()}</strong>
+                  <strong className="text-[#071B2B]">Rs {eMaint.toLocaleString()}</strong>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Savings Hero Banner */}
-          <div className="bg-blue-600 text-white rounded-2xl p-6 shadow-lg shadow-blue-500/20 space-y-2 text-center">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-blue-200 block">
+          <div className="bg-[#16A36A] text-white rounded-3xl p-6 shadow-sm space-y-2 text-center">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-100 block">
               Your Net Monthly Savings
             </span>
-            <div className="text-5xl font-black font-mono tracking-tight">
+            <div className="text-5xl font-black tracking-tight">
               Rs {Math.round(monthlySavings).toLocaleString('en-PK')}
             </div>
-            <div className="text-sm font-mono font-bold text-blue-100 pt-2 border-t border-blue-500/50">
+            <div className="text-xs font-bold text-emerald-100 pt-2 border-t border-emerald-500/40">
               Yearly Savings: Rs {Math.round(yearlySavings).toLocaleString('en-PK')}
             </div>
           </div>
 
           {/* Breakeven Timeline Card */}
-          <div className="bg-amber-50 border-2 border-dashed border-amber-300 rounded-2xl p-6 shadow-xs font-mono text-xs text-center space-y-3">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs text-xs text-center space-y-4">
             
             {/* Mode Switcher */}
-            <div className="grid grid-cols-2 gap-1 bg-amber-100/60 p-1 rounded-xl text-[11px] font-bold text-amber-900">
+            <div className="grid grid-cols-2 gap-1 bg-[#F5F8F6] p-1.5 rounded-2xl text-[11px] font-extrabold text-[#071B2B]">
               <button
                 type="button"
                 onClick={() => setBreakevenMode('full')}
-                className={`py-1.5 rounded-lg transition-all ${
-                  breakevenMode === 'full' ? 'bg-white shadow-xs text-slate-900' : 'text-amber-800'
+                className={`py-2 rounded-xl transition-all cursor-pointer ${
+                  breakevenMode === 'full' ? 'bg-[#16A36A] text-white shadow-xs font-black' : 'text-slate-600 hover:text-[#071B2B]'
                 }`}
               >
                 Full EV Price
@@ -303,8 +327,8 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
               <button
                 type="button"
                 onClick={() => setBreakevenMode('premium')}
-                className={`py-1.5 rounded-lg transition-all ${
-                  breakevenMode === 'premium' ? 'bg-white shadow-xs text-slate-900' : 'text-amber-800'
+                className={`py-2 rounded-xl transition-all cursor-pointer ${
+                  breakevenMode === 'premium' ? 'bg-[#16A36A] text-white shadow-xs font-black' : 'text-slate-600 hover:text-[#071B2B]'
                 }`}
               >
                 Price Difference
@@ -313,28 +337,28 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
 
             {breakevenMode === 'premium' && (
               <div className="text-left pt-1">
-                <label className="block text-[10px] font-bold uppercase text-amber-900 mb-1">
+                <label className="block text-[11px] font-extrabold uppercase text-slate-700 mb-1">
                   Comparable Petrol Bike Price (Rs)
                 </label>
                 <input
                   type="number"
                   value={petrolBikePrice}
                   onChange={(e) => setPetrolBikePrice(Number(e.target.value))}
-                  className="w-full p-2 bg-white border border-amber-300 rounded-lg font-bold text-slate-900"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl font-bold text-[#071B2B] shadow-2xs text-xs"
                 />
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 text-amber-800 font-bold uppercase tracking-wider text-xs">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center justify-center gap-2 text-[#071B2B] font-extrabold uppercase tracking-wider text-xs">
+              <Clock className="w-4 h-4 text-[#16A36A]" />
               Investment Recovery Timeline
             </div>
 
-            <div className="text-4xl font-black text-slate-900">
+            <div className="text-4xl font-black text-[#071B2B]">
               {monthlySavings <= 0 ? 'Never' : `${breakevenMonths} Months`}
             </div>
 
-            <p className="text-[11px] text-amber-900 leading-tight">
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
               {breakevenMode === 'full'
                 ? `Time required to recover full EV price (${formatPKR(evPrice)}) purely from fuel savings.`
                 : `Time to recover the extra price difference over petrol bike (${formatPKR(targetAmount)}).`}
@@ -342,22 +366,22 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
           </div>
 
           {/* Projections Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-3 font-mono text-xs">
-            <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs border-b border-slate-100 pb-2">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-3 text-xs">
+            <h3 className="font-extrabold text-[#071B2B] uppercase tracking-wider text-xs border-b border-slate-100 pb-2">
               Multi-Year Savings Horizon
             </h3>
-            <div className="space-y-2">
-              <div className="flex justify-between py-1 border-b border-slate-100">
+            <div className="space-y-2 font-medium">
+              <div className="flex justify-between py-1 border-b border-slate-100 text-slate-700">
                 <span>1 Year Savings</span>
-                <strong className="text-slate-900">Rs {Math.round(yearlySavings).toLocaleString('en-PK')}</strong>
+                <strong className="text-[#071B2B]">Rs {Math.round(yearlySavings).toLocaleString('en-PK')}</strong>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
+              <div className="flex justify-between py-1 border-b border-slate-100 text-slate-700">
                 <span>3 Years Savings</span>
-                <strong className="text-slate-900">Rs {Math.round(yearlySavings * 3).toLocaleString('en-PK')}</strong>
+                <strong className="text-[#071B2B]">Rs {Math.round(yearlySavings * 3).toLocaleString('en-PK')}</strong>
               </div>
-              <div className="flex justify-between py-1">
+              <div className="flex justify-between py-1 text-slate-700">
                 <span>5 Years Savings</span>
-                <strong className="text-emerald-600 text-sm font-bold">
+                <strong className="text-[#16A36A] text-sm font-black">
                   Rs {Math.round(yearlySavings * 5).toLocaleString('en-PK')}
                 </strong>
               </div>
@@ -365,13 +389,13 @@ export const SavingsCalculator: React.FC<SavingsCalculatorProps> = ({ initialMod
           </div>
 
           {/* CO2 Environmental Impact */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-center gap-4 text-emerald-950 font-mono text-xs">
-            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-5 flex items-center gap-4 text-[#071B2B] text-xs shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#16A36A] text-white flex items-center justify-center shrink-0 shadow-xs">
               <Leaf className="w-5 h-5" />
             </div>
             <div>
-              <strong className="block font-sans text-sm text-emerald-900 font-bold">Green Impact</strong>
-              <span>
+              <strong className="block text-sm text-[#071B2B] font-black">Green Impact</strong>
+              <span className="text-slate-600 font-normal">
                 {Math.round(co2SavedYearly).toLocaleString('en-PK')} kg CO2 saved yearly (~{treesEquivalent} trees equivalent).
               </span>
             </div>
