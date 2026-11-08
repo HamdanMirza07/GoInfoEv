@@ -1,0 +1,8 @@
+{
+  "name": "goinfoev",
+  "description": "goinfoev - Pakistan EV Analytics, Subscription-based Calculators with 7 free trial uses, EasyPaisa/JazzCash payments, Admin Approval Dashboard, Range Estimator, Charging Cost, and Fleet Explorer.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "EV-PK-920313",
+    "name": "Test Visitor",
+    "email": "test@example.com",
+    "phone": "03031234567",
+    "subject": "Testing Dual Delivery",
+    "message": "Salam, testing dual inbox routing.",
+    "receivedAt": "2026-09-03T01:37:25.710Z",
+    "deliveredTo": [
+      "Hamdan7394@gmail.com",
+      "info@orinexai.com"
+    ],
+    "status": "logged"
+  }
+]
