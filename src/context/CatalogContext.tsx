@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { EV_MODELS, EVModel } from '../data/evModels';
 import { exportModelsToCSV, getSampleCSVTemplate } from '../utils/csvParser';
 
-const STORAGE_KEY = 'pakev_custom_catalog_v1';
+const STORAGE_KEY = 'pakev_custom_catalog_v3';
 
 export interface CatalogContextType {
   models: EVModel[];

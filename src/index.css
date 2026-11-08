@@ -4,11 +4,18 @@
 
 @layer base {
   :root {
-    --font-sans: 'Poppins', sans-serif;
-    --font-mono: 'Poppins', sans-serif;
+    --font-sans: 'Manrope', sans-serif;
+    --font-mono: 'Manrope', sans-serif;
+    --color-navy-deep: #071B2B;
+    --color-navy-slate: #172B3A;
+    --color-electric-green: #16A36A;
+    --color-energy-amber: #F0B429;
+    --color-soft-white: #F5F8F6;
   }
   html, body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Manrope', sans-serif;
+    background-color: #F5F8F6;
+    color: #071B2B;
     max-width: 100%;
     overflow-x: hidden;
     scroll-behavior: smooth;

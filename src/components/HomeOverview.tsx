@@ -296,92 +296,116 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
   return (
     <div className="space-y-12 pb-16">
       
-      {/* ───────────────────────────────────────────────────────────
-          1. MODERN LIGHT HERO SECTION & LIVE METRIC PULSE
-      ──────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-blue-50/70 via-white to-slate-50 p-6 sm:p-10 border border-slate-200/90 shadow-sm">
-        {/* Subtle decorative glow */}
-        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 rounded-full bg-blue-100/60 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-96 h-96 rounded-full bg-indigo-100/60 blur-3xl pointer-events-none"></div>
+      {/* 1. PREMIUM LIGHT AUTOMOTIVE EV HERO SECTION */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#F5F8F6] p-6 sm:p-12 lg:p-14 border border-slate-200/90 shadow-xs min-h-[480px] sm:min-h-[520px] flex flex-col justify-between">
+        {/* Soft Ambient Glows */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-[#16A36A]/12 blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-5">
-          
-          {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-xs font-semibold text-slate-700">
+        {/* Subtle Background EV Overlay */}
+        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 z-0 pointer-events-none opacity-20 overflow-hidden rounded-r-3xl">
+          <img 
+            src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=1200&auto=format&fit=crop&q=80" 
+            alt="EV Background" 
+            className="w-full h-full object-cover object-center filter grayscale mix-blend-multiply"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F5F8F6] via-[#F5F8F6]/80 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 max-w-2xl space-y-5 text-left">
+          {/* Status Pill Tag */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-xs font-bold text-[#071B2B]">
             <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A36A] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A36A]"></span>
             </span>
-            <span>Verified 2026 Pakistan EV Ecosystem</span>
+            <span>2026 COLLECTION — NOW AVAILABLE</span>
             <span className="text-slate-300">|</span>
-            <span className="text-blue-700 font-bold">15 Brands • 38+ Models</span>
+            <span className="text-[#16A36A]">157+ Verified Models</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-slate-950">
-            Smart Mobility &amp; Energy Suite for{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600">
-              Pakistan Electric Vehicles
+          {/* Big Headline in Deep Navy & Electric Green */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-[#071B2B]">
+            The Future <br />
+            <span className="text-[#16A36A]">
+              Drives Now.
             </span>
           </h1>
 
-          <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-normal">
-            Accurately simulate real-world battery range, calculate petrol vs electricity savings, estimate solar charging setup, and compare verified specifications of 38+ local EV scooters.
+          {/* Subtitle Description */}
+          <p className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-normal">
+            Experience the next generation of electric performance in Pakistan. Zero emissions. Infinite possibilities. Engineered for those who demand more.
           </p>
 
-          {/* Live KPI Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 max-w-3xl mx-auto text-left">
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:border-blue-300 transition-colors">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider">Models in Fleet</span>
-                <Database className="w-3.5 h-3.5 text-blue-600" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900">{totalModelsCount} Bikes</div>
-              <div className="text-[10px] text-emerald-700 font-bold mt-0.5">{totalBrandsCount} Official Brands</div>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3.5 pt-2">
+            <button 
+              onClick={() => {
+                if (fleetSectionRef.current) {
+                  fleetSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  onNavigate('products');
+                }
+              }}
+              className="px-7 py-3.5 rounded-full bg-[#16A36A] hover:bg-[#138a59] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#16A36A]/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2.5 cursor-pointer"
+            >
+              <span>Explore Models</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
 
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:border-cyan-300 transition-colors">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider">Max Eco Range</span>
-                <Gauge className="w-3.5 h-3.5 text-cyan-600" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900">{maxRangeModel?.rangeMax || 180} km</div>
-              <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">{maxRangeModel?.brand} {maxRangeModel?.model}</div>
-            </div>
+            <button 
+              onClick={() => onNavigate('comparison')}
+              className="px-7 py-3.5 rounded-full bg-white hover:bg-slate-50 text-[#071B2B] border border-slate-200 shadow-xs hover:border-[#16A36A]/40 text-sm sm:text-base font-semibold transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Zap className="w-4 h-4 text-[#16A36A]" />
+              <span>Compare Bikes</span>
+            </button>
+          </div>
+        </div>
 
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:border-emerald-300 transition-colors">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider">Avg Monthly Save</span>
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-emerald-600">Rs ~8,500+</div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5">vs 45 km/L Petrol</div>
+        {/* Bottom Floating Stats Cards Row in Pure White */}
+        <div className="relative z-10 pt-8 sm:pt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-xl">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+            <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
+              <span>{maxRangeModel?.rangeMax || 180}</span>
+              <span className="text-xs sm:text-sm font-bold text-[#16A36A]">km</span>
             </div>
-
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:border-amber-300 transition-colors">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider">Solar Potential</span>
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-amber-600">100% Free</div>
-              <div className="text-[10px] text-slate-500 font-medium mt-0.5">Zero Grid Expense</div>
+            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">
+              MAX RANGE
             </div>
           </div>
 
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+            <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
+              <span>4.2</span>
+              <span className="text-xs sm:text-sm font-bold text-[#16A36A]">s</span>
+            </div>
+            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">
+              0-50 KM/H
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+            <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
+              <span>90</span>
+              <span className="text-xs sm:text-sm font-bold text-[#16A36A]">kph</span>
+            </div>
+            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mt-1">
+              TOP SPEED
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ───────────────────────────────────────────────────────────
-          AI BOT ASSISTANT BANNER (Instant Question & Answer Automation)
-      ──────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-r from-slate-900 via-emerald-950/80 to-slate-900 text-white rounded-3xl p-5 sm:p-7 shadow-lg border border-slate-800 relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      {/* AI BOT ASSISTANT BANNER */}
+      <section className="bg-[#071B2B] text-white rounded-3xl p-5 sm:p-7 shadow-lg border border-[#172B3A] relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-[#16A36A]/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-400/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16A36A]/20 text-[#16A36A] text-xs font-bold border border-[#16A36A]/30">
               <div className="relative flex items-center justify-center">
-                <Bike className="w-3.5 h-3.5 text-emerald-400" />
-                <Zap className="w-2 h-2 text-amber-400 fill-amber-400 absolute -top-1 -right-1" />
+                <Bike className="w-3.5 h-3.5 text-[#16A36A]" />
+                <Zap className="w-2 h-2 text-[#F0B429] fill-[#F0B429] absolute -top-1 -right-1" />
               </div>
               <span>Automated EV Scooty AI Consultant • 24/7 Live</span>
             </div>
@@ -398,11 +422,11 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('open-ev-bot', { detail: {} }));
               }}
-              className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 text-white font-bold text-sm shadow-md hover:from-emerald-500 hover:to-blue-500 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-emerald-400/40"
+              className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white font-extrabold text-sm shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer border border-[#16A36A]"
             >
               <div className="relative flex items-center justify-center">
-                <Bike className="w-4 h-4 text-emerald-100" />
-                <Zap className="w-2.5 h-2.5 text-amber-300 fill-amber-300 absolute -top-1 -right-1.5" />
+                <Bike className="w-4 h-4 text-white" />
+                <Zap className="w-2.5 h-2.5 text-[#F0B429] fill-[#F0B429] absolute -top-1 -right-1.5" />
               </div>
               <span>Ask EV Scooty Bot</span>
               <ArrowRight className="w-4 h-4" />
@@ -411,7 +435,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
         </div>
 
         {/* Quick Click Prompts */}
-        <div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="mt-4 pt-3 border-t border-[#172B3A] flex items-center gap-2 overflow-x-auto no-scrollbar">
           <span className="text-[11px] font-semibold text-slate-400 shrink-0">Popular questions:</span>
           {[
             { label: '🛵 Best bike in Pakistan?', q: 'Which EV bike has the best range and build quality in Pakistan?' },
@@ -425,7 +449,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('open-ev-bot', { detail: { query: item.q } }));
               }}
-              className="text-xs shrink-0 bg-slate-800/80 hover:bg-blue-600/30 text-slate-300 hover:text-white border border-slate-700/80 hover:border-blue-400/50 px-3 py-1 rounded-full transition-colors cursor-pointer"
+              className="text-xs shrink-0 bg-[#172B3A] hover:bg-[#16A36A]/20 text-slate-200 hover:text-white border border-slate-700 hover:border-[#16A36A] px-3 py-1 rounded-full transition-colors cursor-pointer"
             >
               {item.label}
             </button>

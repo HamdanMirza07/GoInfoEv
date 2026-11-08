@@ -91,62 +91,44 @@ async function startServer() {
       const userText = message.trim();
       const client = getGeminiClient();
 
+      // Dynamic dataset summary for full catalog grounding
+      const modelSummaryText = EV_MODELS.map(m => 
+        `- ${m.brand} ${m.model} ${m.variant ? `(${m.variant})` : ''}: Price PKR ${m.price ? m.price.toLocaleString('en-PK') : 'N/A'}, Battery: ${m.batteryLabel} (${m.batteryWh}Wh, ${m.chemistry.toUpperCase()}), Motor: ${m.motor}, Range: ${m.rangeMin}-${m.rangeMax} km, Top Speed: ${m.topSpeed}, Charge Time: ${m.chargeTime}`
+      ).slice(0, 80).join('\n');
+
       // System instructions providing rich Pakistani EV ecosystem grounding
       const systemInstruction = `You are "PakEV Assistant", the official smart AI consultant on goinfoEV - Pakistan's premier Electric Vehicle analytics & advisory platform.
-You assist Pakistani consumers, daily commuters, and delivery riders (Foodpanda, Bykea, Yango, Indrive) with expert advice.
+You assist Pakistani consumers, daily commuters, and delivery riders (Foodpanda, Bykea, Yango, Indrive) with expert advice based on the exact live website dataset below.
+
+WEBSITE LIVE EV DATABASE (${EV_MODELS.length} Models Available):
+${modelSummaryText}
 
 KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
-1. TOP EV BIKE BRANDS & MODELS:
-   - Crown Electric (Official Scraped Fleet): Rizz (600-800W, 51.2V 20Ah LFP, 50-70 km, PKR 145,000), Spark Lithium (800-1200W, 64V 30Ah LFP, 50-70 km, PKR 195,000), Fairy Lithium (1000-1500W, 73.6V 30Ah LFP, 60-70 km, PKR 220,000), Firefly Tough Guard (1200-1800W, 73.6V 30Ah LFP, 70-90 km, 3-4h charge, PKR 235,000), Flash (1500-2200W, 73.6V 40Ah 3kW LFP, 100-120 km, PKR 285,000), Champion Standard (1500-2200W, 73.6V 40Ah LFP, 100-120 km, PKR 285,000) & Champion Pro (73.6V 60Ah 4.4kW LFP, 160-180 km, PKR 335,000), Knight Rider (Sports style, 1500-2200W, 73.6V 40Ah, 100-120 km, PKR 295,000), X200 Lithium Pro (2000-3000W, 76.8V 40Ah LFP, 100-120 km, PKR 315,000), Raftaar Standard (3000-4000W, 73.6V 40Ah 3kW LFP, 100-110 km, 85-90 km/h, Metal Safety Frame, Square LED, CBS, PKR 309,900), Raftaar Pro (3000-4000W, 73.6V 60Ah 4.4kW LFP, 140-160 km, 85-90 km/h, Metal Safety Frame, Square LED, CBS, PKR 345,000), Ezee 3-Wheeler Trike (800-1200W, 73.6V 30Ah LFP, NFC, reverse mode, PKR 269,000), Ezee XL Utility 3-Wheeler (800-1000W, 73.6V 40Ah LFP, front/rear cargo baskets, PKR 385,000), Rick E Mini Electric Rickshaw (800-1000W, 73.6V 40Ah LFP, wiper windscreen, 200kg load, PKR 489,900).
-   - Jinpeng (Official Lithium Fleet): Thrill (2000W, 72V 52Ah Lithium, 75 km/h, 140-160 km range, Dual Disk, PKR 549,000), Cruise (1500W, 72V 42Ah Lithium, 65 km/h, 120-130 km range, Dual Disk, PKR 279,900), Rush (1200W, 72V 42Ah Lithium, 55 km/h, 130-140 km range, Dual Disk, PKR 259,900), Swift (1200W, 72V 42Ah Lithium, 55 km/h, 130-140 km range, Dual Disk, PKR 249,900), Reliance (800W, 72V 26Ah Lithium, 45 km/h, 80-90 km range, PKR 239,900), Sprint (1000W, 72V 30Ah Lithium, 55 km/h, 100-110 km range, PKR 229,900), Ride (1000W, 72V 30Ah Lithium, 50 km/h, 110-120 km range, Dual Disk, PKR 219,900), Eco (800W, 72V 26Ah Lithium, 45 km/h, 80-90 km range, PKR 189,900), Thunder (1800W, 65 km/h, 60-65 km, PKR 389,900), Thunder 2.0 Pro (1800W, 72V 42Ah Lithium, 65 km/h, 100-110 km, PKR 419,900). All with 30-month official battery warranty.
-   - Yadea (Official yadea.com.pk Fleet): M3 (1200W, 60V 23Ah Graphene, PKR 174,000), Ruibin S (2000W peak, 72V 25Ah Graphene, PKR 193,000), GT30 (1000W, 60V 23Ah Graphene, PKR 194,000), Ruibin (GTR 5.0, 72V 26Ah Graphene, 90-100 km, PKR 209,000), T5 (2100W peak, 57 km/h, PKR 253,500), M3H LFP (2200W, 60V 30Ah LFP, 110 km eco, PKR 255,000), Ruibin L LFP (2000W, 72V 30Ah LFP, PKR 270,000), G5 (2400W peak, 72V 26Ah Graphene, PKR 280,000), T5L LFP (2700W peak, 72V 30Ah LFP, 4-yr warranty, PKR 305,000), Epoc-H (3200W, 72V 38Ah Graphene, 70 km/h, PKR 355,000), Velax LFP (3200W, 72V 30Ah LFP, 14" wheels, PKR 444,000), GT70 Flagship LFP (2000W, 72V 50Ah LFP, 110-170 km, PKR 479,000), Keeness Superbike (11kW mid-motor, 72V 64Ah Ternary Lithium, 100 km/h, PKR 1,400,000).
-   - Evee: C1 Air (100-110 km, 72V 30Ah Lithium, PKR ~300,000), Nisa (step-through for women/students, PKR ~175,000), Gen-Z (PKR ~195,000).
-   - MS Jaguar (Official 2026 Lineup): Miso (800-1000W, 60V 28Ah Graphene, 70 km, PKR 158,000), Bolt (1000-1200W, 80-100 km, NFC, PKR 174,000), M1 (1200-1500W, 90-100 km, Cruise Control, PKR 204,000), Miso 3-W Trike (800-1000W, 72V 32Ah, 80 km, PKR 228,000), Legacy (3200-3800W, 72V 42Ah Graphene, 115 km, RGB lights, PKR 245,000), E-70 (1500W, 72V 30Ah LFP, 90-100 km, 5-yr warranty, 3500 cycles, 2.5h fast charge, PKR 265,000), E-70 Supreme (1500W, tablet meter, open-spring suspension, PKR 275,000), E-125 Flagship (2000W, 72V 50Ah LFP, 150-170 km, 5-yr warranty, PKR 370,000). All maintenance-free locally engineered EVs.
-   - Metro (Official metroev.pk Fleet): X8 Foldable Scooter (36V 10.4Ah Detachable Lithium, 35-45 km, PKR 85,000), Step-Thru (48V 20Ah, PKR 129,000 - 169,000), Wonder Bike (48V 20Ah Nano Carbon, 50-65 km, PKR 95,000), Super Bike (60V 20Ah Nano Carbon, 65-80 km, PKR 110,000 - 144,000), Dabang (NCF 72V 24Ah PKR 190,000 / LFP 76.8V 30Ah PKR 265,000, NFC & Cruise Control), T9 Sport (NCF 72V 27Ah PKR 184,000 / LFP 76.8V 30Ah PKR 265,000), Thrill Pro (72V 24Ah NCF, PKR 189,000), T9 Pro (72V 32Ah Graphene, PKR 245,000 - 265,000), Metrix (NCF 72V 38Ah PKR 229,000 / LFP 76.8V 45Ah PKR 335,000), E8S Mountain Climber (72V 38Ah NCF High-Torque, PKR 265,000 - 284,000), M6 Empower (NCF 72V 38Ah PKR 250,000 / Portable LFP 73.6V 30Ah PKR 274,000), Premium (73.6V 30Ah LFP, PKR 295,000), Premium Plus (76.8V 40Ah LFP, PKR 335,000), Miku Super Sports Naked (3000W mid-motor, 72V 40Ah Double Lithium NCM, 80 km/h, App + Fingerprint, PKR 550,000).
-   - United Auto Industries: Electric Bullet (2000W Motor Power, Lithium 72V 30Ah, 90-95 km/h, 80-90 km range, 4-5h charge, PKR 285,000), Electric Smart, Revolt, Electric Sharp.
-   - Vlektra (Official vlektra.com Fleet): Retro (1500W hub, 100 Nm, 72V 24Ah LFP 10-yr life, 70 km/h, 80-100 km, 2.5h fast charge, PKR 279,000), Velocity 180 (Pakistan's longest range commuter, 1500W, 72V 36Ah LFP 3000 cycles, 70 km/h, 180 km certified range, 3h fast charge, PKR 339,000), Velocity 180 SE (2000W BLDC, 120 Nm, 85 km/h, 72V 36Ah LFP, 180 km range, Dual Discs, PKR 399,000), Bolt (Pakistan's fastest electric streetfighter, 3000W BLDC, 120 Nm, 105 km/h, 72V 38Ah LFP, 150 km, USD inverted forks, sound module, Dual Discs, PKR 549,000), Bolt Dark (Stealth Dark edition with integrated tank storage, 3000W, 105 km/h, 150 km range, PKR 599,000), 1969 Retro (Handcrafted bespoke café racer, 3000W, 120 Nm, 0-60 km/h in 4.0s, 105 km/h, 72V 36Ah LFP, 150 km range, PKR 619,000). All models feature 3-year replacement battery warranty and 2-year motor warranty.
-   - OKLA (Official okla.com.pk Fleet): ORA (600W hub, 48V 30Ah LFP, 40 km/h, 70-88 km, PKR 199,000), ORBIT (1000W hub, 72V 20Ah, 45 km/h, 80-110 km, PKR 225,000), ONYX (1200W hub, 72V 32Ah Graphene, 45 km/h, 90-100 km, 4-5h charge, PKR 189,000), OKT Lithium Pro (1000W hub, 72V 30Ah LFP, 50 km/h, 80-110 km, 3-yr battery warranty, PKR 298,000), OKT Econo (1200W hub, 70V 32Ah Graphene, 45 km/h, 75-85 km, PKR 202,000), OMO (2000W high-torque hub, 72V 30Ah Lithium, 60 km/h, 90-100 km, Dual Disc, PKR 299,000), OMIGO (1500W, 74V 28Ah Lithium, 80 km/h, 100-120 km, 3h fast charge, step-through, PKR 299,000), OKG (4000W naked streetfighter, 74V 28Ah Lithium, 80 km/h, 60-80 km, Dual Disc, PKR 449,000), OMAX (3000W maxi-scooter, 72V 40Ah Lithium, 85 km/h, 80-100 km, touring shield, PKR 599,000), OVA (3000W touring, 72V 40Ah Lithium, 80 km/h, 85-100 km, PKR 489,000), OVEGA (7000W mid-drive superbike, 72V 80Ah ultra-capacity lithium 5.76kWh, 120 km/h, 200-215 km range, PKR 799,000).
-   - REVOO (Official revoo-ev.com.pk Fleet): A04 (350W, 48V 12Ah Graphene, 35-40 km, PKR 100,000), A09 (500-1000W, 48V 26Ah Graphene, 65-80 km, PKR 145,000), A11 (1000-1500W, 60V 26Ah Graphene PKR 167,000 / 60.8V 30Ah LFP 3-yr warranty PKR 205,000, 75-90 km), A12 (1000-1800W, front disc, 72V 26Ah Graphene PKR 180,000 / 73.6V 30Ah LFP PKR 239,000, 80-100 km), Y04 Portable Lithium (350-700W, 48V 12Ah removable lithium, 40-45 km, 40kg weight, indoor charging, PKR 119,000), Y06 City (350-700W, 48V 20Ah, 50-60 km, PKR 151,000), C35 Young (1200-2400W, 72V 35Ah Graphene PKR 235,000 / 73.6V 30Ah LFP PKR 269,000, 80-115 km), C35 Comfort (1800-2400W, 72V 35Ah Graphene, dual disc, 80-110 km, PKR 279,000), C35 GT Flagship (3000-4500W, 73.6V 50Ah 3.68kWh LFP, 75 km/h, 100-135 km, dual disc, PKR 399,000), B12 Delivery (1800-3600W, 73.6V 50Ah LFP, 1.5h super-fast charging, 90-120 km, PKR 350,000 - 395,000), E52 Heavy Cruiser (3000-4800W, 96V 35Ah high-voltage graphene, 75 km/h, 70-110 km, CBS disc brakes, PKR 405,000).
-   - Jolta Electric (Official 15-Model Fleet): JE-125L Flagship (2000W, 60V 50Ah LFP, 80 km/h, 100-120 km, Dual Disc, PKR 329,900), JE-100L SE Apex (1500W, 60V 50Ah LFP, 110-120 km, PKR 274,900), JE-70L SE Bolt (1500W, 60V 50Ah LFP, 110-120 km, PKR 264,900), JE-100L Thunder (1500W, 60V 30Ah LFP, 70-90 km, PKR 249,900), JE-70L Fury (1500W, 60V 30Ah LFP, 70-80 km, PKR 239,900), JE-100G Fox (1500W, 60V 26Ah Graphene, PKR 185,900), JE-70G Wolf (1500W, 60V 26Ah Graphene, PKR 170,900), Mecha Scooty (2000W, 72V 36Ah Graphene, 70 km/h, PKR 271,900), Zeno Pro (1200W, 72V 36Ah, PKR 221,900), Zeno (PKR 205,900), Neo Pro (PKR 189,900), Neo (PKR 179,900), Storm Pro (PKR 182,900), Storm (PKR 169,900), Sparrow (500W, 48V 26Ah Graphene, 25-35 km, PKR 120,900).
-   - YJ Future (Official yjfuture.pk Fleet): Azadi C1 (1000-1200W, 76.8V 30Ah LFP/Graphene, 70-90 km, multi-mode meter, PKR 189,000 / 219,000), Indus Cargo Loader (600-800W, 48V 20Ah, 50kg rack, 0.5 unit/charge, PKR 95,000), Zippy E1 (600W, 48V 20Ah, 35-40 km/h, 40-50 km, PKR 130,000), S7 (1000-1200W, 60V 32Ah, 45-50 km/h, 70-90 km, 18-mo warranty, PKR 159,000), Twister (1000W, 60V 32Ah Chilwee Graphene PKR 167,000 / 73.6V 30Ah LFP PKR 205,000, front disc, 70-90 km), Azadi Pro (1000W, 60V 32Ah Graphene PKR 184,000 / LFP PKR 219,000, 70-90 km), Cruise Z1 Maxi Scooty (1200-1500W, 72V 32Ah Chilwee Graphene, 55-60 km/h, 70-100 km, Dual Discs, PKR 199,000), ECO Urban (650W, 60V 23Ah Graphene, CAE steel frame, PKR 230,000), Cruise Z9 Flagship Maxi (1500W, 72V 36Ah Graphene PKR 229,000 / LFP PKR 269,000, Dual Discs, 90-110 km), Cruise X7 (1500W, 76.8V 30Ah LiFePO4, 60 km/h, 70-90 km, Dual Discs, PKR 249,000), Azadi Standard (1000W, 60V 26Ah Graphene, 70-80 km, PKR 165,000), Mini EV 3-Wheeler Cabin (1000W, 60V 32Ah Graphene, 50-60 km, PKR 385,000), Mini EV Pro 4-Door (1000W, 72V 32Ah Graphene, Solar roof charging, PKR 485,000).
+1. TOP EV BIKE BRANDS IN DATABASE:
+   - Crown Electric: Rizz (PKR 145,000), Spark Lithium (PKR 195,000), Fairy Lithium (PKR 235,000), Firefly (PKR 245,000), Flash (PKR 299,000), Champion Standard/Pro (PKR 285,000 - 345,000), Raftaar Standard/Pro (PKR 309,900 - 365,000), X200 (PKR 325,000), Ezee 3-Wheeler Trike & Utility, Rick E Rickshaw.
+   - MS Jaguar: Miso (PKR 158,000), Bolt (PKR 174,000), M1 (PKR 204,000), Legacy (PKR 245,000), E-70 (PKR 265,000), E-70 Supreme (PKR 275,000), E-125 Flagship (PKR 370,000).
+   - Vlektra: Retro (PKR 279,000), Velocity 180 (PKR 339,000, 180 km range), Velocity 180 SE (PKR 399,000), Bolt Streetfighter (PKR 549,000), Bolt Dark (PKR 599,000), 1969 Retro Café Racer (PKR 619,000).
+   - OKLA: ORA (PKR 199,000), ORBIT (PKR 225,000), ONYX (PKR 189,000), OKT Lithium Pro (PKR 298,000), OMO (PKR 299,000), OMIGO (PKR 299,000), OKG Streetfighter (PKR 449,000), OMAX Maxi (PKR 599,000), OVEGA Superbike (7kW mid-drive, 200km range, PKR 799,000).
+   - REVOO: A04 (PKR 100,000), A09 (PKR 145,000), A11 (PKR 167,000/205,000), A12 (PKR 180,000/239,000), Y04 Portable (PKR 119,000), Y06 City (PKR 151,000), C35 Young/Comfort/GT Flagship (PKR 235,000 - 399,000), B12 Delivery (PKR 350,000), E52 Heavy Cruiser (PKR 405,000).
+   - Jolta Electric: JE-125L Flagship (PKR 329,900), JE-100L SE Apex (PKR 274,900), JE-70L SE Bolt (PKR 264,900), JE-100L Thunder (PKR 249,900), JE-70L Fury (PKR 239,900), JE-100G Fox (PKR 185,900), JE-70G Wolf (PKR 170,900), Mecha Scooty (PKR 271,900), Zeno Pro, Sparrow (PKR 120,900).
+   - YJ Future: Azadi C1 (PKR 189,000/219,000), Indus Cargo Loader (PKR 95,000), Zippy E1 (PKR 130,000), S7 (PKR 159,000), Twister (PKR 167,000/205,000), Cruise Z1 Maxi (PKR 199,000), Cruise Z9 Flagship Maxi (PKR 229,000/269,000), Cruise X7 (PKR 249,000), Mini EV 3-Wheeler Cabin (PKR 385,000), Mini EV Pro 4-Door (PKR 485,000).
+   - Jinpeng, Yadea, Metro, United Auto Industries.
 
 2. BATTERY COMPARISONS FOR PAKISTAN CLIMATE:
-   - LFP (Lithium Iron Phosphate): 3000-4000 cycles (7-10 years). Safest in 45°C+ Pakistan summer, zero thermal runaway risk. Best investment.
-   - Graphene (TTFAR): 800-1200 cycles (2.5-4 years). Affordable replacement (PKR 65k-95k) vs LFP (PKR 180k-290k).
+   - LFP (Lithium Iron Phosphate): 3000-4000 cycles (7-10 years). Safest in 45°C+ Pakistan summer.
+   - Graphene (TTFAR): 800-1200 cycles (2.5-4 years). Affordable replacement.
    - NMC Lithium: 1500-2000 cycles, lightweight, high performance.
-   - Lead-Acid: 300-500 cycles (1-1.5 years). Heavy, outdated, avoid if budget permits.
 
-3. CHARGING COSTS & CALCULATIONS (K-Electric, LESCO, IESCO, FESCO):
-   - Battery size: Typically 1.8 to 2.9 kWh.
+3. CHARGING COSTS & CALCULATIONS:
    - Tariff: Average PKR 45 to 65 per unit.
-   - Units per full charge: 2.0 to 3.5 units.
-   - Cost per full charge: PKR 90 to 180 (for 80-110 km!).
-   - Cost per km: PKR 1.1 to 1.6 / km.
-   - Petrol comparison: Petrol 70cc @ PKR 280/L (40 km/L) costs PKR 7.00 / km.
-   - Monthly commuter saving (1,500 km): PKR 8,000 - 10,000+.
-   - Delivery rider saving (3,000 km): PKR 18,000 - 25,000+ per month!
+   - Units per full charge: 2.0 to 3.5 units. Total cost per charge: PKR 90 to 180 (for 80-110 km!).
+   - Cost per km: PKR 1.1 to 1.6 / km (Petrol 70cc costs ~PKR 7.00/km @ Rs 280/L).
 
-4. DEALERSHIPS & LOCATIONS:
-   - Karachi: Akbar Road (Saddar hub), Clifton, DHA, Rashid Minhas Rd.
-   - Lahore: McLeod Road (major 2-wheeler hub), Gulberg, DHA Phase 5.
-   - Islamabad / Rawalpindi: Murree Road, Blue Area.
-   - Also present in Faisalabad, Multan, Gujranwala, Sialkot, Peshawar.
-
-5. COMMUNICATION STYLE:
-   - Reply in clear, professional English.
-   - Keep answers clear, friendly, encouraging, and informative with bullet points and numbers.
-   - When relevant to the user's question, mention one of our built-in interactive tools using one of these exact action tokens on a new line:
-     [ACTION:range] (to check real-world km range)
-     [ACTION:charging] (to calculate exact electricity units & K-Electric/LESCO bill)
-     [ACTION:savings] (to compare petrol vs EV monthly savings)
-     [ACTION:dealerships] (to find verified showroom locations & maps in Karachi, Lahore, etc.)
-     [ACTION:battery] (to check battery health & LFP vs Graphene lifespan)
-     [ACTION:solar] (to calculate solar charging setup)
-     [ACTION:rider] (for Bykea/Foodpanda delivery rider profit calculator)
-     [ACTION:products] (to view full model catalog and prices)
-     [ACTION:comparison] (to compare 2-3 bikes side by side)
-     [ACTION:contact] (to send direct inquiry to Hamdan & team)
-   - Do not hallucinate fake phone numbers. Direct user inquiries to goinfoEV contact portal or Hamdan7394@gmail.com / info@orinexai.com.`;
+4. COMMUNICATION STYLE:
+   - Respond in clear, helpful, accurate English or Roman Urdu matching the user's input.
+   - Include relevant data (prices, specs, range) from the dataset.
+   - Add exact action tokens on a new line when helpful:
+     [ACTION:range], [ACTION:charging], [ACTION:savings], [ACTION:dealerships], [ACTION:battery], [ACTION:solar], [ACTION:rider], [ACTION:products], [ACTION:comparison], [ACTION:contact]`;
 
       let botReply = "";
 
@@ -174,7 +156,6 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
             contents,
             config: {
               systemInstruction,
-              temperature: 0.7,
             },
           });
 
@@ -215,44 +196,53 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
     }
   });
 
-  // Local knowledge helper for fallback
+  // Local knowledge helper for fallback (Dynamic EV_MODELS lookup)
   function generateLocalPakEVResponse(query: string): string {
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
 
-    if (q.includes("range") || q.includes("kitne km") || q.includes("kitni chal") || q.includes("km chalegi") || q.includes("masafat")) {
-      return `⚡ **Pakistan EV Bike Range Overview:**\n\n- **Crown Raftaar / Falcon:** 100 - 110 km per single charge (73.6V 40Ah LFP).\n- **Yadea T9 / E8S Pro:** 95 - 115 km (72V 26Ah-38Ah Graphene TTFAR).\n- **Evee C1 Air:** 100 - 110 km (72V 30Ah Lithium).\n- **MS Jaguar E-70 / E-125:** 80 - 110 km.\n- **OKLA ORA / OKT:** 75 - 110 km.\n\n💡 *Tip:* Real-world range depends on rider weight, speed mode, and tyre pressure.\n\n[ACTION:range]\n[ACTION:products]`;
+    // 1. Check for specific brand match in EV_MODELS
+    const matchedModels = EV_MODELS.filter(m => 
+      q.includes(m.brand.toLowerCase()) || 
+      q.includes(m.model.toLowerCase()) ||
+      (m.variant && q.includes(m.variant.toLowerCase()))
+    );
+
+    if (matchedModels.length > 0) {
+      const topMatches = matchedModels.slice(0, 5);
+      const listText = topMatches.map(m => 
+        `• **${m.brand} ${m.model}** ${m.variant ? `(${m.variant})` : ''}\n  - **Price:** ${m.price ? `PKR ${m.price.toLocaleString('en-PK')}` : 'Contact Showroom'}\n  - **Battery:** ${m.batteryLabel} (${m.chemistry.toUpperCase()})\n  - **Range:** ${m.rangeMin}-${m.rangeMax} km | **Top Speed:** ${m.topSpeed}\n  - **Motor:** ${m.motor}`
+      ).join('\n\n');
+
+      return `⚡ **Website Dataset Details for "${query}":**\n\n${listText}\n\n💡 *Tip:* You can use our simulator tools to calculate exact monthly charging bill and petrol savings for these models!\n\n[ACTION:products]\n[ACTION:range]\n[ACTION:charging]`;
     }
 
-    if (q.includes("cost") || q.includes("unit") || q.includes("charging") || q.includes("bill") || q.includes("k-electric") || q.includes("lesco") || q.includes("kharcha")) {
-      return `💰 **Charging Cost & Electricity Calculation in Pakistan:**\n\n1. **Units per Full Charge:** Typically **2.2 to 3.2 units (kWh)** for a full 0 to 100% recharge.\n2. **Current Electricity Tariff:** Rs. 45 - 65 per unit (K-Electric / LESCO / IESCO).\n3. **Total Cost per Charge:** Just **Rs. 100 to Rs. 180**!\n4. **Cost Per Kilometer:** ~**Rs. 1.20 to Rs. 1.50 per km** (compared to Petrol 70cc which costs ~Rs. 7.00/km @ Rs. 280/L).\n\n[ACTION:charging]\n[ACTION:savings]`;
+    // 2. Specific Query Intent Checks
+    if (q.includes("range") || q.includes("km") || q.includes("kitne km") || q.includes("kitni chal")) {
+      return `⚡ **Pakistan EV Bike Range Highlights:**\n\n- **Longest Commuter:** Vlektra Velocity 180 (180 km certified range, PKR 339,000)\n- **High Performance:** Vlektra Bolt & 1969 Retro (150 km range, 105 km/h, PKR 549,000 - 619,000)\n- **Crown Raftaar Pro LFP:** 140 - 160 km range (PKR 365,000)\n- **MS Jaguar E-125 Flagship:** 150 - 170 km range (PKR 370,000)\n- **Jinpeng Thrill:** 140 - 160 km range (75 km/h, PKR 549,000)\n- **OKLA OVEGA Superbike:** 200 - 215 km range (7kW mid-drive, PKR 799,000)\n\n[ACTION:range]\n[ACTION:products]`;
+    }
+
+    if (q.includes("cost") || q.includes("unit") || q.includes("charging") || q.includes("bill") || q.includes("kharcha") || q.includes("bijli")) {
+      return `💰 **EV Charging & Electricity Cost in Pakistan:**\n\n- **Units per Full Charge:** Typically **2.0 to 3.5 units (kWh)** for 80-120 km range.\n- **Current Tariff Rate:** Rs. 45 - 65 per unit (K-Electric / LESCO / IESCO / FESCO).\n- **Cost per Full Charge:** Just **Rs. 90 to Rs. 180**!\n- **Cost Per Kilometer:** ~**Rs. 1.20 to Rs. 1.50 per km** (vs Petrol 70cc ~Rs. 7.00/km @ Rs 280/L).\n\n[ACTION:charging]\n[ACTION:savings]`;
     }
 
     if (q.includes("bachat") || q.includes("saving") || q.includes("petrol") || q.includes("comparison") || q.includes("muqabla")) {
-      return `📊 **Petrol vs EV Savings Breakdown:**\n\n- **Petrol 70cc (1500 km/month):** ~Rs. 10,500 Petrol + Rs. 1,500 Engine Oil = **Rs. 12,000/month**.\n- **EV Bike (1500 km/month):** Only ~Rs. 1,800 to Rs. 2,200 Electricity + Rs. 0 Oil = **Rs. 2,200/month**.\n- **Monthly Net Saving:** ~**Rs. 9,800 to Rs. 10,000+**!\n- **Annual Saving:** Over **Rs. 120,000/- every year**!\n\n[ACTION:savings]\n[ACTION:comparison]`;
+      return `📊 **Monthly Petrol vs EV Savings:**\n\n- **Petrol 70cc Bike (1,500 km/mo):** ~Rs. 10,500 Petrol + Rs. 1,500 Oil = **Rs. 12,000/month**.\n- **EV Bike (1,500 km/mo):** ~Rs. 2,000 Electricity + Rs. 0 Oil = **Rs. 2,000/month**.\n- **Monthly Savings:** **Rs. 10,000+ per month**!\n- **Yearly Savings:** **Rs. 120,000+ per year**!\n\n[ACTION:savings]\n[ACTION:comparison]`;
     }
 
     if (q.includes("battery") || q.includes("lfp") || q.includes("graphene") || q.includes("life") || q.includes("lithium")) {
-      return `🔋 **Battery Comparison (LFP vs Graphene vs Lead Acid):**\n\n1. **Lithium LFP (Crown Raftaar, Surge):**\n   - **Lifespan:** 3,000+ cycles (7 to 10 years).\n   - **Heat Safety:** Safest chemistry for Pakistan's 45°C+ summer.\n\n2. **TTFAR Graphene (Yadea T9, E8S Pro):**\n   - **Lifespan:** 800 - 1,200 cycles (2.5 to 4 years).\n   - **Cost:** Affordable replacement compared to LFP.\n\n3. **Lead-Acid (Old technology):**\n   - **Lifespan:** 300 - 500 cycles (1 to 1.5 years).\n   - Not recommended for long-term daily commuters.\n\n[ACTION:battery]`;
+      return `🔋 **Battery Tech Comparison for Pakistan Climate:**\n\n- **Lithium LFP (LiFePO4):** 3,000 - 4,000 cycles (7 to 10 years life). Zero thermal runaway risk in 45°C+ summer heat. Featured in Crown, MS Jaguar, Vlektra, Revoo & Okla LFP models.\n- **TTFAR Graphene:** 800 - 1,200 cycles (2.5 to 4 years). Budget-friendly replacement.\n- **NMC / Ternary Lithium:** Lightweight, high acceleration.\n\n[ACTION:battery]`;
     }
 
-    if (q.includes("rider") || q.includes("foodpanda") || q.includes("bykea") || q.includes("yango") || q.includes("indrive") || q.includes("delivery")) {
-      return `🛵 **Special Advice for Delivery Riders (Bykea / Foodpanda / Yango):**\n\n- Daily running: 80 - 120 km.\n- Daily Petrol expense on CD70: ~Rs. 700 - 900.\n- Daily EV charging expense: ~Rs. 110 - 150.\n- **Daily Savings:** ~Rs. 600 - 750.\n- **Monthly Profit Increase:** **Rs. 18,000 to Rs. 23,000+** extra in your pocket!\n\n⭐ *Recommended bikes for riders:* Crown Raftaar (40Ah LFP) or Yadea T9 Graphene.\n\n[ACTION:rider]\n[ACTION:range]`;
+    if (q.includes("sasti") || q.includes("cheapest") || q.includes("budget") || q.includes("price") || q.includes("rate") || q.includes("qeemat") || q.includes("qemat")) {
+      return `🏷️ **Latest EV Bike Prices in Pakistan (Budget to Premium):**\n\n- **Under Rs. 150,000:** Revoo A04 (PKR 100k), YJ Future Indus Cargo (PKR 95k), Metro Wonder Bike (PKR 95k), Revoo Y04 (PKR 119k), Crown Rizz (PKR 145k), Revoo A09 (PKR 145k).\n- **Rs. 150,000 - 250,000:** MS Jaguar Miso (PKR 158k), MS Jaguar Bolt (PKR 174k), Jolta JE-70G Wolf (PKR 170.9k), Crown Spark (PKR 195k), Yadea Ruibin (PKR 209k), YJ Future Azadi (PKR 189k-219k).\n- **Rs. 250,000 - 400,000:** MS Jaguar E-70 (PKR 265k), Crown Raftaar (PKR 309.9k), Vlektra Retro (PKR 279k), Vlektra Velocity 180 (PKR 339k), MS Jaguar E-125 (PKR 370k).\n- **Over Rs. 400,000:** Vlektra Bolt (PKR 549k), Jinpeng Thrill (PKR 549k), OKLA OVEGA (PKR 799k).\n\n[ACTION:products]\n[ACTION:comparison]`;
     }
 
-    if (q.includes("karachi") || q.includes("lahore") || q.includes("islamabad") || q.includes("dealership") || q.includes("showroom") || q.includes("kahan") || q.includes("address") || q.includes("shop")) {
-      return `📍 **EV Showrooms & Dealerships in Pakistan:**\n\n- **Karachi:** Akbar Road (Saddar EV Hub), Clifton, DHA Phase 6, Main Rashid Minhas Road.\n- **Lahore:** McLeod Road 2-Wheeler Market, Main Boulevard Gulberg, DHA Phase 5.\n- **Islamabad / Rawalpindi:** Murree Road & Blue Area.\n- **Faisalabad & Multan:** Jhang Road, Katchery Road.\n\nUse our interactive map tool to find exact addresses, phone numbers, and Google Maps directions!\n\n[ACTION:dealerships]`;
+    if (q.includes("karachi") || q.includes("lahore") || q.includes("islamabad") || q.includes("showroom") || q.includes("dealership") || q.includes("shop")) {
+      return `📍 **Showroom & Dealership Hubs in Pakistan:**\n\n- **Karachi:** Akbar Road Saddar, Clifton Block 4, DHA Phase 6, Main Rashid Minhas Road.\n- **Lahore:** McLeod Road 2-Wheeler Market, Main Boulevard Gulberg, DHA Phase 5.\n- **Islamabad / Rawalpindi:** Murree Road & Blue Area.\n\n[ACTION:dealerships]`;
     }
 
-    if (q.includes("price") || q.includes("qemat") || q.includes("qeemat") || q.includes("rate") || q.includes("sasti") || q.includes("best bike")) {
-      return `🏷️ **Latest EV Bike Prices in Pakistan (2025-2026):**\n\n- **Budget Entry (PKR 175k - 219k):** Jinpeng Eco (PKR 189k), Jinpeng Ride (PKR 219k), Crown Rizz, Evee Nisa, MS Jaguar E-70.\n- **Mid-Range Workhorses (PKR 229k - 279k):** Jinpeng Sprint (PKR 229k), Reliance (PKR 239k), Swift (PKR 249k), Rush (PKR 259k), Cruise (PKR 279k), Crown Spark, Crown Fairy, Yadea T9.\n- **Premium Long Range (PKR 285k - 549k):** Jinpeng Thrill (75 km/h, 160km, PKR 549k), Crown Raftaar LFP (3kW), Crown Champion Pro, Evee C1 Air.\n\n[ACTION:products]\n[ACTION:comparison]`;
-    }
-
-    if (q.includes("solar") || q.includes("dhoop") || q.includes("free charging")) {
-      return `☀️ **Solar Charging for EV Bikes:**\n\n- An EV bike needs only ~2.5 kWh per day.\n- Just **2 standard solar panels (550W each)** with a small inverter or DC solar charger can power your bike for **100% FREE** with Rs. 0 electricity bill!\n\n[ACTION:solar]`;
-    }
-
-    // Default friendly Pakistani EV response
-    return `Hello! I am the **goinfoEV AI Assistant** ⚡. I can help you with all questions regarding Electric Vehicles in Pakistan:\n\n1. **EV Bike Prices & Range (Crown, Yadea, Evee, etc.)**\n2. **Monthly Petrol Savings (Save PKR 10,000 - 25,000+/mo)**\n3. **K-Electric / LESCO / IESCO Charging Costs**\n4. **Battery Technology: LFP vs Graphene Lifespan**\n5. **Verified Showrooms & Dealerships in Karachi, Lahore, and Islamabad**\n6. **Commercial Delivery Rider ROI (Bykea, Foodpanda, Yango)**\n\nFeel free to ask any question!\n\n[ACTION:products]\n[ACTION:savings]`;
+    // Default response using complete website dataset context
+    return `Hello! I am the **goinfoEV AI Assistant** ⚡. I can answer any question about our website's EV dataset (${EV_MODELS.length} EV models from Crown, MS Jaguar, Vlektra, OKLA, REVOO, Jolta, YJ Future, Yadea, Metro, Jinpeng, and United):\n\n- 🛵 **Model specs, prices, battery types & top speeds**\n- 💰 **Monthly petrol vs EV savings comparisons**\n- ⚡ **K-Electric, LESCO & IESCO charging bill calculations**\n- 🔋 **LFP vs Graphene battery health & summer heat safety**\n- 📍 **Showroom locations in Karachi, Lahore, and Islamabad**\n\nWhat would you like to know? You can ask in English or Roman Urdu!\n\n[ACTION:products]\n[ACTION:savings]`;
   }
 
   // Contact Form Submission API - Sends to BOTH configured emails

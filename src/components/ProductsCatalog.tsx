@@ -137,7 +137,7 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
       <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16A36A]/10 text-[#16A36A] border border-[#16A36A]/30 text-xs font-bold mb-3">
               <FileText className="w-3.5 h-3.5" />
               EV Model Specification Explorer
             </div>

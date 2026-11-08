@@ -16,6 +16,7 @@ import { ContentGuidePage } from './components/ContentGuidePage';
 import { ChargingStationsFinder } from './components/ChargingStationsFinder';
 import { AIBotAssistant } from './components/AIBotAssistant';
 import { Footer } from './components/Footer';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { CatalogProvider } from './context/CatalogContext';
 import { SubscriptionModal } from './components/SubscriptionModal';
@@ -88,7 +89,7 @@ export default function App() {
         <Navbar activeTab={activeTab} setActiveTab={handleNavigateWithScroll} />
 
         {/* Main Page Container */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 lg:pb-0">
           {activeTab === 'home' && (
             <HomeOverview
               onNavigate={handleNavigateWithScroll}
@@ -178,6 +179,9 @@ export default function App() {
 
         {/* AI Bot Assistant Widget (Accessible across all views) */}
         <AIBotAssistant onNavigate={handleNavigateWithScroll} />
+
+        {/* Fixed Mobile Bottom Navigation Bar (< lg screen breakpoint) */}
+        <MobileBottomNav activeTab={activeTab} setActiveTab={handleNavigateWithScroll} />
 
         {/* Footer */}
         <Footer onNavigate={handleNavigateWithScroll} />
