@@ -352,7 +352,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-[#F0B429]/12 blur-3xl pointer-events-none"></div>
 
         {/* Animated Fleet Image Slider (Transparent / Cutout Style, 3s Rotation) */}
-        <div className="absolute right-0 top-0 bottom-0 w-full sm:w-1/2 lg:w-[55%] z-0 pointer-events-none overflow-hidden flex items-center justify-end pr-4 sm:pr-12">
+        <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[55%] z-0 pointer-events-none overflow-hidden flex items-center justify-end pr-4 sm:pr-12 opacity-80 lg:opacity-100">
           {heroSliderModels.map((m, idx) => {
             const isActive = idx === sliderIndex;
             return (
@@ -366,28 +366,28 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
               >
                 <div className="relative w-full h-full flex items-center justify-center p-4">
                   {/* Glowing backdrop */}
-                  <div className="absolute w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-[#16A36A]/10 blur-3xl pointer-events-none"></div>
+                  <div className="absolute w-48 h-48 sm:w-80 sm:h-80 rounded-full bg-[#16A36A]/10 blur-3xl pointer-events-none"></div>
                   
                   {m.image && !m.image.includes('.jpg') ? (
                     <img
                       src={m.image}
                       alt={getFullName(m)}
-                      className="max-h-[320px] sm:max-h-[400px] w-auto object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-105"
+                      className="max-h-[200px] sm:max-h-[400px] w-auto object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-105"
                     />
                   ) : (
-                    <div className="flex items-center justify-center w-64 h-64 text-[#16A36A]">
+                    <div className="flex items-center justify-center w-48 h-48 sm:w-64 sm:h-64 text-[#16A36A]">
                       <AnimatedEVBikeSvg className="w-full h-full" />
                     </div>
                   )}
 
-                  {/* Floating Model Badge */}
-                  <div className="absolute bottom-6 right-6 sm:right-10 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl px-4 py-2.5 shadow-lg flex items-center gap-3 pointer-events-auto">
+                  {/* Floating Model Badge - Hide on very small screens to avoid clutter */}
+                  <div className="absolute bottom-6 right-2 sm:right-10 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl px-3 py-2 shadow-lg flex items-center gap-3 pointer-events-auto scale-75 sm:scale-100">
                     <div className="w-8 h-8 rounded-xl bg-[#16A36A]/10 text-[#16A36A] flex items-center justify-center font-black">
                       ⚡
                     </div>
                     <div>
-                      <div className="text-xs font-black text-[#071B2B]">{getFullName(m)}</div>
-                      <div className="text-[10px] font-bold text-[#16A36A]">
+                      <div className="text-[10px] sm:text-xs font-black text-[#071B2B]">{getFullName(m)}</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-[#16A36A]">
                         {m.price ? formatPKR(m.price) : 'Official Fleet Model'} • {m.rangeMax ? `${m.rangeMax} km Range` : ''}
                       </div>
                     </div>
@@ -398,9 +398,9 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
           })}
         </div>
 
-        <div className="relative z-10 max-w-2xl space-y-5 text-left">
+        <div className="relative z-10 max-w-2xl space-y-5 text-left bg-white/60 sm:bg-transparent p-4 sm:p-0 rounded-2xl backdrop-blur-sm sm:backdrop-blur-none">
           {/* Status Pill Tag */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-xs font-bold text-[#071B2B]">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 shadow-xs text-xs font-bold text-[#071B2B]">
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A36A] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A36A]"></span>
@@ -419,7 +419,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
           </h1>
 
           {/* Subtitle Description */}
-          <p className="text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-normal">
+          <p className="text-[#071B2B] sm:text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-medium sm:font-normal">
             Experience the next generation of electric performance in Pakistan. Zero emissions. Infinite possibilities. Engineered for those who demand more.
           </p>
 
@@ -451,7 +451,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
 
         {/* Bottom Floating Stats Cards Row in Pure White */}
         <div className="relative z-10 pt-8 sm:pt-12 grid grid-cols-3 gap-3 sm:gap-4 max-w-xl">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs transition-colors">
             <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
               <span>{maxRangeModel?.rangeMax || 180}</span>
               <span className="text-xs sm:text-sm font-bold text-[#16A36A]">km</span>
@@ -461,7 +461,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs transition-colors">
             <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
               <span>4.2</span>
               <span className="text-xs sm:text-sm font-bold text-[#16A36A]">s</span>
@@ -471,7 +471,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 sm:p-4 shadow-xs hover:border-[#16A36A]/40 transition-colors">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs transition-colors">
             <div className="text-2xl sm:text-4xl font-black text-[#071B2B] tracking-tight flex items-baseline gap-1">
               <span>90</span>
               <span className="text-xs sm:text-sm font-bold text-[#16A36A]">kph</span>
@@ -800,7 +800,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
             VIEW 1: MODERN CARD GRID VIEW
         ─────────────────────────────────────────────── */}
         {viewMode === 'grid' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedModels.map((ev) => {
               const avgRefRange = ((ev.rangeMin || 0) + (ev.rangeMax || ev.rangeMin || 0)) / 2;
               const realRange = avgRefRange * rangeAcc;
