@@ -14,7 +14,6 @@ import { ContactPage } from './components/ContactPage';
 import { BlogsPage } from './components/BlogsPage';
 import { ContentGuidePage } from './components/ContentGuidePage';
 import { ChargingStationsFinder } from './components/ChargingStationsFinder';
-import { AIBotAssistant } from './components/AIBotAssistant';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { SubscriptionProvider } from './context/SubscriptionContext';
@@ -179,7 +178,7 @@ export default function App() {
         <SubscriptionModal />
 
         {/* AI Bot Assistant Widget (Accessible across all views) */}
-        <AIBotAssistant onNavigate={handleNavigateWithScroll} />
+        {/* <AIBotAssistant onNavigate={handleNavigateWithScroll} /> */}
 
         {/* Fixed Mobile Bottom Navigation Bar (< lg screen breakpoint) */}
         <MobileBottomNav activeTab={activeTab} setActiveTab={handleNavigateWithScroll} />
