@@ -41,6 +41,9 @@ export default defineConfig(() => {
           enabled: true,
           type: 'module',
         },
+        workbox: {
+          navigateFallbackDenylist: [/^\/api\//, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
+        },
       }),
     ],
     define: {

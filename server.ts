@@ -278,6 +278,9 @@ async function startServer() {
           port: Number(process.env.SMTP_PORT) || 587,
           secure: process.env.SMTP_SECURE === "true",
           auth: { user: smtpUser, pass: smtpPass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
         }),
       };
     }
@@ -294,6 +297,9 @@ async function startServer() {
           port: 465,
           secure: true,
           auth: { user, pass },
+          connectionTimeout: 10000,
+          greetingTimeout: 10000,
+          socketTimeout: 15000,
         }),
       };
     }
@@ -1732,6 +1738,11 @@ ${urlEntries
 </urlset>`;
 
     res.type("application/xml").send(xml);
+  });
+
+  // Never let unmatched /api/* routes fall through to SPA HTML
+  app.all("/api/*", (_req, res) => {
+    res.status(404).json({ error: "API endpoint not found." });
   });
 
   // Vite development middleware or production static handling

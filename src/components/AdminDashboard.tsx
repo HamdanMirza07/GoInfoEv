@@ -329,7 +329,16 @@ export const AdminDashboard: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: recoveryEmailInput.trim() }),
       });
-      const data = await res.json().catch(() => ({}));
+      const rawText = await res.text();
+      let data: any = {};
+      let isJson = false;
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+        isJson = true;
+      } catch {
+        isJson = false;
+      }
+
       if (res.ok && data.success) {
         if (data.maskedEmail) setRecoveryMaskedEmail(data.maskedEmail);
         setRecoveryNotice(data.message || `6-digit recovery code sent to ${recoveryMaskedEmail}.`);
@@ -343,10 +352,15 @@ export const AdminDashboard: React.FC = () => {
         if (typeof data.retryAfterSeconds === 'number') {
           setResendCooldown(data.retryAfterSeconds);
         }
-        setRecoveryError(data.error || 'Could not send recovery code.');
+        setRecoveryError(
+          data.error ||
+            (!isJson
+              ? `Server temporarily returned non-JSON response (HTTP ${res.status}). Please refresh the page and try again.`
+              : `Could not send recovery code (HTTP ${res.status}).`)
+        );
       }
     } catch {
-      setRecoveryError('Network error while requesting recovery code.');
+      setRecoveryError('Network error while requesting recovery code. Please check your connection and try again.');
     } finally {
       setRecoveryLoading(false);
     }
