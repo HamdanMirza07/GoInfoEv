@@ -49,7 +49,7 @@ export function getConfiguredAdminPasscode(): string {
   if (envPass && envPass.length >= 4) {
     return envPass;
   }
-  return "admin786";
+  return "123456";
 }
 
 export function hasStoredAdminPasscode(): boolean {
