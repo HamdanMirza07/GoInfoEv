@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { EV_MODELS, EVModel } from '../data/evModels';
 import { exportModelsToCSV, getSampleCSVTemplate } from '../utils/csvParser';
+import { getAdminAuthHeaders } from '../utils/authHeaders';
 
 const STORAGE_KEY = 'pakev_custom_catalog_v3';
 
@@ -85,7 +86,8 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       await fetch('/api/admin/catalog/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ models: updatedList })
       });
       return true;
@@ -151,7 +153,8 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
       try {
         const res = await fetch(`/api/catalog/models/${encodeURIComponent(updatedModel.id)}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify(updatedModel)
         });
 
@@ -185,7 +188,8 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
           const res = await fetch('/api/catalog/upload-image', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
             body: JSON.stringify({
               dataUrl,
               filename: file.name
@@ -230,7 +234,9 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     try {
       const res = await fetch(`/api/catalog/models/${encodeURIComponent(targetId)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
       });
       if (!res.ok) {
         await persistModels(updated);
@@ -257,7 +263,9 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     try {
       const res = await fetch(`/api/catalog/brands/${encodeURIComponent(brandName.trim())}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
       });
       if (!res.ok) {
         await persistModels(updated);
@@ -278,7 +286,11 @@ export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
     setModels(EV_MODELS);
     try {
-      await fetch('/api/admin/catalog/reset', { method: 'POST' });
+      await fetch('/api/admin/catalog/reset', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
+      });
     } catch (e) {
       console.warn('Backend reset failed:', e);
     }

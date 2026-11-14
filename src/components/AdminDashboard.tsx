@@ -26,22 +26,60 @@ import {
   Save,
   MessageCircle,
   AlertCircle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Eye,
+  EyeOff,
+  KeyRound,
+  ArrowLeft,
+  Send
 } from 'lucide-react';
 import { UserSubscription, SubscriptionStats, PaymentConfig } from '../types/subscription';
 import { AdminFleetManager } from './AdminFleetManager';
 import { useCatalog } from '../context/CatalogContext';
 import { ErrorBoundary } from './ErrorBoundary';
+import {
+  clearAdminToken,
+  getAdminAuthHeaders,
+  setAdminToken,
+} from '../utils/authHeaders';
 
 export const AdminDashboard: React.FC = () => {
   const { totalCount } = useCatalog();
 
-  // Admin authentication state (Passcode: admin786)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('pakev_admin_auth') === 'true';
-  });
+  // Admin authentication state (verified against server HMAC session)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [checkingSession, setCheckingSession] = useState<boolean>(true);
   const [adminPin, setAdminPin] = useState('');
+  const [showAdminPin, setShowAdminPin] = useState(false);
   const [pinError, setPinError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Forgot Passcode / Gmail OTP Recovery states
+  const [authView, setAuthView] = useState<'login' | 'forgot' | 'reset'>('login');
+  const [recoveryMaskedEmail, setRecoveryMaskedEmail] = useState('Ha******94@gmail.com');
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+  const [recoveryEmailInput, setRecoveryEmailInput] = useState('');
+  const [recoveryOtp, setRecoveryOtp] = useState('');
+  const [newPasscodeInput, setNewPasscodeInput] = useState('');
+  const [confirmPasscodeInput, setConfirmPasscodeInput] = useState('');
+  const [showNewPasscode, setShowNewPasscode] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoveryNotice, setRecoveryNotice] = useState('');
+  const [smtpMissingHelp, setSmtpMissingHelp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Authenticated Admin Security Modal states
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [secCurrentPasscode, setSecCurrentPasscode] = useState('');
+  const [secNewPasscode, setSecNewPasscode] = useState('');
+  const [secConfirmPasscode, setSecConfirmPasscode] = useState('');
+  const [secRecoveryEmail, setSecRecoveryEmail] = useState('');
+  const [secSmtpConfigured, setSecSmtpConfigured] = useState(false);
+  const [secLoading, setSecLoading] = useState(false);
+  const [secError, setSecError] = useState('');
+  const [secSuccess, setSecSuccess] = useState('');
+  const [showSecPasscodes, setShowSecPasscodes] = useState(false);
 
   // Top Admin View Tab: 'fleet-csv' vs 'users' vs 'payment-settings'
   const [adminTab, setAdminTab] = useState<'fleet-csv' | 'users' | 'payment-settings'>(() => {
@@ -112,10 +150,49 @@ export const AdminDashboard: React.FC = () => {
   const [newUserPaymentMethod, setNewUserPaymentMethod] = useState<'easypaisa' | 'jazzcash' | 'bank'>('easypaisa');
   const [newUserTrxId, setNewUserTrxId] = useState('');
 
+  useEffect(() => {
+    let active = true;
+    const verifySession = async () => {
+      try {
+        const res = await fetch('/api/admin/session', {
+          headers: getAdminAuthHeaders(),
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.authenticated) {
+            setIsAuthenticated(true);
+            setCheckingSession(false);
+            return;
+          }
+        }
+      } catch {
+        // ignore network errors
+      }
+      if (active) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        setCheckingSession(false);
+      }
+    };
+    verifySession();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/subscriptions');
+      const res = await fetch('/api/admin/subscriptions', {
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setSubscriptions(data.subscriptions || []);
@@ -160,10 +237,16 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/admin/payment-config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify(paymentConfig)
       });
 
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         setSettingsSuccess('Payment account details and pricing successfully updated! All users will see these updated details immediately.');
         setTimeout(() => setSettingsSuccess(''), 4000);
@@ -178,20 +261,231 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPin.trim() === 'admin786' || adminPin.trim() === '1234') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('pakev_admin_auth', 'true');
-      setPinError('');
-    } else {
-      setPinError('Incorrect PIN. (Hint: default passcode is admin786)');
+    setLoginLoading(true);
+    setPinError('');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ passcode: adminPin }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success && data.token) {
+        setAdminToken(data.token);
+        setIsAuthenticated(true);
+        setAdminPin('');
+      } else {
+        setPinError(data.error || 'Invalid admin passcode.');
+      }
+    } catch {
+      setPinError('Unable to verify credentials with server.');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const fetchRecoveryStatus = async () => {
+    try {
+      const res = await fetch('/api/admin/recovery-status');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.maskedEmail) setRecoveryMaskedEmail(data.maskedEmail);
+        setSmtpConfigured(Boolean(data.smtpConfigured));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const openForgotPasscode = () => {
+    setAuthView('forgot');
+    setRecoveryError('');
+    setRecoveryNotice('');
+    setSmtpMissingHelp(false);
+    fetchRecoveryStatus();
+  };
+
+  const handleRequestRecoveryOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setRecoveryLoading(true);
+    setRecoveryError('');
+    setRecoveryNotice('');
+    setSmtpMissingHelp(false);
+
+    try {
+      const res = await fetch('/api/admin/forgot-passcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmailInput.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        if (data.maskedEmail) setRecoveryMaskedEmail(data.maskedEmail);
+        setRecoveryNotice(data.message || `6-digit recovery code sent to ${recoveryMaskedEmail}.`);
+        setResendCooldown(45);
+        setAuthView('reset');
+      } else if (data.code === 'SMTP_NOT_CONFIGURED') {
+        setSmtpConfigured(false);
+        setSmtpMissingHelp(true);
+        setRecoveryError(data.error || 'Gmail SMTP is not configured on the server yet.');
+      } else {
+        if (typeof data.retryAfterSeconds === 'number') {
+          setResendCooldown(data.retryAfterSeconds);
+        }
+        setRecoveryError(data.error || 'Could not send recovery code.');
+      }
+    } catch {
+      setRecoveryError('Network error while requesting recovery code.');
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
+  const handleResetPasscodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryError('');
+    if (newPasscodeInput.trim().length < 6) {
+      setRecoveryError('New passcode must be at least 6 characters long.');
+      return;
+    }
+    if (newPasscodeInput.trim() !== confirmPasscodeInput.trim()) {
+      setRecoveryError('New passcode and confirm passcode do not match.');
+      return;
+    }
+
+    setRecoveryLoading(true);
+    try {
+      const res = await fetch('/api/admin/reset-passcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          code: recoveryOtp.trim(),
+          newPasscode: newPasscodeInput.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success && data.token) {
+        setAdminToken(data.token);
+        setIsAuthenticated(true);
+        setAuthView('login');
+        setRecoveryOtp('');
+        setNewPasscodeInput('');
+        setConfirmPasscodeInput('');
+        setRecoveryEmailInput('');
+        setRecoveryNotice('');
+      } else {
+        setRecoveryError(data.error || 'Invalid or expired recovery code.');
+      }
+    } catch {
+      setRecoveryError('Server error while resetting passcode.');
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
+  const openSecurityModal = async () => {
+    setSecurityModalOpen(true);
+    setSecError('');
+    setSecSuccess('');
+    setSecCurrentPasscode('');
+    setSecNewPasscode('');
+    setSecConfirmPasscode('');
+    try {
+      const res = await fetch('/api/admin/security-settings', {
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        setSecurityModalOpen(false);
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        setSecRecoveryEmail(data.recoveryEmail || '');
+        setSecSmtpConfigured(Boolean(data.smtpConfigured));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleUpdateSecuritySettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecError('');
+    setSecSuccess('');
+
+    if (!secCurrentPasscode.trim()) {
+      setSecError('Please enter your current Admin Passcode to save changes.');
+      return;
+    }
+    if (secNewPasscode.trim()) {
+      if (secNewPasscode.trim().length < 6) {
+        setSecError('New Admin Passcode must be at least 6 characters long.');
+        return;
+      }
+      if (secNewPasscode.trim() !== secConfirmPasscode.trim()) {
+        setSecError('New passcode and confirm passcode do not match.');
+        return;
+      }
+    }
+
+    setSecLoading(true);
+    try {
+      const res = await fetch('/api/admin/change-passcode', {
+        method: 'POST',
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPasscode: secCurrentPasscode.trim(),
+          newPasscode: secNewPasscode.trim() || undefined,
+          recoveryEmail: secRecoveryEmail.trim() || undefined,
+        }),
+      });
+      if (res.status === 401 && res.headers.get('content-type')?.includes('json')) {
+        const errData = await res.json().catch(() => ({}));
+        setSecError(errData.error || 'Current Admin Passcode is incorrect.');
+        setSecLoading(false);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setSecSuccess(data.message || 'Admin security settings updated successfully.');
+        setSecCurrentPasscode('');
+        setSecNewPasscode('');
+        setSecConfirmPasscode('');
+      } else {
+        setSecError(data.error || 'Failed to update admin security settings.');
+      }
+    } catch {
+      setSecError('Network error while updating security settings.');
+    } finally {
+      setSecLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // ignore
+    }
+    clearAdminToken();
     setIsAuthenticated(false);
-    sessionStorage.removeItem('pakev_admin_auth');
+    setAuthView('login');
   };
 
   const handleCopy = (text: string, key: string) => {
@@ -206,9 +500,15 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ status: 'approved' })
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         await fetchSubscriptions();
       }
@@ -228,9 +528,15 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({ status: 'disallowed', reason })
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         await fetchSubscriptions();
       }
@@ -246,8 +552,15 @@ export const AdminDashboard: React.FC = () => {
     setActionLoading(id);
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/reset-free`, {
-        method: 'POST'
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         await fetchSubscriptions();
       }
@@ -265,8 +578,15 @@ export const AdminDashboard: React.FC = () => {
     setActionLoading(id);
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAdminAuthHeaders(),
+        credentials: 'include',
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         await fetchSubscriptions();
       }
@@ -286,7 +606,8 @@ export const AdminDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/admin/subscriptions/manual', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({
           name: newUserName.trim() || 'Direct Subscriber',
           identifier: newUserIdentifier.trim(),
@@ -296,6 +617,11 @@ export const AdminDashboard: React.FC = () => {
           trxId: newUserTrxId.trim()
         })
       });
+      if (res.status === 401) {
+        clearAdminToken();
+        setIsAuthenticated(false);
+        return;
+      }
       if (res.ok) {
         setAddModalOpen(false);
         setNewUserName('');
@@ -327,52 +653,273 @@ export const AdminDashboard: React.FC = () => {
   // ───────────────────────────────────────────────────────────
   // LOGIN SCREEN (If not authenticated)
   // ────────────────────────────────────────────────────────────
+  if (checkingSession) {
+    return (
+      <div className="py-16 max-w-md mx-auto text-center text-sm font-semibold text-slate-500">
+        Verifying secure admin session...
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="py-12 max-w-md mx-auto">
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 space-y-6 text-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-600/20">
-            <Lock className="w-8 h-8" />
+            {authView === 'login' ? (
+              <Lock className="w-8 h-8" />
+            ) : (
+              <Mail className="w-8 h-8" />
+            )}
           </div>
 
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Admin Control Portal</h2>
+            <h2 className="text-2xl font-black text-slate-900">
+              {authView === 'login'
+                ? 'Admin Control Portal'
+                : authView === 'forgot'
+                ? 'Forgot Admin Passcode'
+                : 'Enter Gmail Recovery Code'}
+            </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Calculator Subscriptions, Access Approval & User Requests
+              {authView === 'login'
+                ? 'Protected Access — Calculator Subscriptions & Fleet Management'
+                : authView === 'forgot'
+                ? `We will send a 6-digit one-time code to your Admin Gmail (${recoveryMaskedEmail})`
+                : `Enter the 6-digit code sent to ${recoveryMaskedEmail} and set a new passcode`}
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Enter Admin Security Passcode
-              </label>
-              <input
-                type="password"
-                required
-                autoFocus
-                placeholder="Passcode"
-                value={adminPin}
-                onChange={(e) => setAdminPin(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono text-center tracking-widest text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              <p className="text-[11px] text-slate-600 mt-1.5 text-center font-medium">
-                Default Demo Passcode: <code className="bg-blue-50 text-blue-800 font-bold px-1.5 py-0.5 rounded border border-blue-200">admin786</code>
-              </p>
-            </div>
+          {authView === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-4 text-left">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Enter Admin Security Passcode
+                  </label>
+                  <button
+                    type="button"
+                    onClick={openForgotPasscode}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                  >
+                    Forgot Passcode?
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showAdminPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={adminPin}
+                    onChange={(e) => setAdminPin(e.target.value)}
+                    className="w-full pl-4 pr-11 py-3 rounded-xl border border-slate-300 font-mono text-center tracking-widest text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPin((v) => !v)}
+                    aria-label={showAdminPin ? 'Hide passcode' : 'Show passcode'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  >
+                    {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
-            {pinError && (
-              <p className="text-xs text-rose-600 font-bold text-center">{pinError}</p>
-            )}
+              {pinError && (
+                <p className="text-xs text-rose-600 font-bold text-center">{pinError}</p>
+              )}
 
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Unlock className="w-4 h-4" />
-              <span>Unlock Admin Dashboard</span>
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Unlock className="w-4 h-4" />
+                <span>{loginLoading ? 'Verifying...' : 'Unlock Admin Dashboard'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openForgotPasscode}
+                className="w-full py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5 text-blue-600" />
+                <span>Forgot Code? Send Reset OTP to Gmail</span>
+              </button>
+            </form>
+          )}
+
+          {authView === 'forgot' && (
+            <form onSubmit={handleRequestRecoveryOtp} className="space-y-4 text-left">
+              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[11px] text-blue-900 font-medium">
+                Registered Recovery Gmail: <strong className="font-mono">{recoveryMaskedEmail}</strong>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Confirm Your Admin Gmail Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  placeholder="Enter your registered Admin Gmail"
+                  value={recoveryEmailInput}
+                  onChange={(e) => setRecoveryEmailInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {recoveryError && (
+                <p className="text-xs text-rose-600 font-bold text-center">{recoveryError}</p>
+              )}
+
+              {(smtpMissingHelp || smtpConfigured === false) && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-left space-y-1.5 text-[11px] text-amber-950">
+                  <p className="font-extrabold flex items-center gap-1.5 text-amber-900">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Gmail SMTP Setup Required for Automated Email</span>
+                  </p>
+                  <p className="text-amber-900/90 leading-relaxed">
+                    Server par automated Gmail send karne ke liye environment Secrets mein{' '}
+                    <code className="font-mono bg-amber-100 px-1 rounded">GMAIL_USER</code> aur 16-digit{' '}
+                    <code className="font-mono bg-amber-100 px-1 rounded">GMAIL_APP_PASSWORD</code> add karein.
+                  </p>
+                  <p className="text-amber-900/90 leading-relaxed">
+                    Emergency override ke liye aap Secrets mein direct{' '}
+                    <code className="font-mono bg-amber-100 px-1 rounded">ADMIN_PASSCODE</code> bhi set kar sakte hain.
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={recoveryLoading}
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>{recoveryLoading ? 'Sending to Gmail...' : 'Send 6-Digit Code to Gmail'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthView('login');
+                  setRecoveryError('');
+                  setPinError('');
+                }}
+                className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer flex items-center justify-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Passcode Login</span>
+              </button>
+            </form>
+          )}
+
+          {authView === 'reset' && (
+            <form onSubmit={handleResetPasscodeSubmit} className="space-y-4 text-left">
+              {recoveryNotice && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-semibold">
+                  {recoveryNotice}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  6-Digit Code from Gmail
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  maxLength={6}
+                  autoFocus
+                  placeholder="000000"
+                  value={recoveryOtp}
+                  onChange={(e) => setRecoveryOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 font-mono text-center tracking-[0.4em] text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  New Admin Passcode (min 6 characters)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPasscode ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    placeholder="Enter new strong passcode"
+                    value={newPasscodeInput}
+                    onChange={(e) => setNewPasscodeInput(e.target.value)}
+                    className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPasscode((v) => !v)}
+                    aria-label={showNewPasscode ? 'Hide passcode' : 'Show passcode'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  >
+                    {showNewPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Confirm New Passcode
+                </label>
+                <input
+                  type={showNewPasscode ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  placeholder="Re-enter new passcode"
+                  value={confirmPasscodeInput}
+                  onChange={(e) => setConfirmPasscodeInput(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {recoveryError && (
+                <p className="text-xs text-rose-600 font-bold text-center">{recoveryError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={recoveryLoading}
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>{recoveryLoading ? 'Updating Passcode...' : 'Reset Passcode & Unlock'}</span>
+              </button>
+
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  disabled={resendCooldown > 0 || recoveryLoading}
+                  onClick={() => handleRequestRecoveryOtp()}
+                  className="text-xs font-bold text-blue-600 hover:underline disabled:text-slate-400 disabled:no-underline cursor-pointer"
+                >
+                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Gmail Code'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthView('login');
+                    setRecoveryError('');
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  Back to Login
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -414,6 +961,14 @@ export const AdminDashboard: React.FC = () => {
             title="Refresh list"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            onClick={openSecurityModal}
+            className="px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Passcode &amp; Gmail</span>
           </button>
 
           <button
@@ -1279,6 +1834,150 @@ export const AdminDashboard: React.FC = () => {
                   className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold shadow-xs"
                 >
                   Save & Grant Access
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────
+          ADMIN SECURITY: CHANGE PASSCODE & GMAIL RECOVERY MODAL
+      ──────────────────────────────────────────────────────────── */}
+      {securityModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Admin Security &amp; Recovery</h3>
+                  <p className="text-[11px] text-slate-500">Update passcode &amp; Gmail recovery address</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSecurityModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer font-bold px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${
+              secSmtpConfigured
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : 'bg-amber-50 border-amber-200 text-amber-950'
+            }`}>
+              {secSmtpConfigured ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span><strong>Gmail OTP Active:</strong> Forgot-passcode emails can be sent automatically to your recovery Gmail.</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Gmail SMTP Not Configured:</strong> Add <code className="font-mono bg-amber-100 px-1 rounded">GMAIL_USER</code> &amp; <code className="font-mono bg-amber-100 px-1 rounded">GMAIL_APP_PASSWORD</code> in environment Secrets to enable forgot-passcode emails.
+                  </span>
+                </>
+              )}
+            </div>
+
+            <form onSubmit={handleUpdateSecuritySettings} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Recovery Gmail Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={secRecoveryEmail}
+                  onChange={(e) => setSecRecoveryEmail(e.target.value)}
+                  placeholder="Hamdan7394@gmail.com"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">
+                    Current Admin Passcode *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowSecPasscodes((v) => !v)}
+                    className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                  >
+                    {showSecPasscodes ? 'Hide' : 'Show'} Passcodes
+                  </button>
+                </div>
+                <input
+                  type={showSecPasscodes ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={secCurrentPasscode}
+                  onChange={(e) => setSecCurrentPasscode(e.target.value)}
+                  placeholder="Enter current passcode"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  New Admin Passcode (optional, min 6 chars)
+                </label>
+                <input
+                  type={showSecPasscodes ? 'text' : 'password'}
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={secNewPasscode}
+                  onChange={(e) => setSecNewPasscode(e.target.value)}
+                  placeholder="Leave blank to keep current passcode"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {secNewPasscode.length > 0 && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Confirm New Passcode *
+                  </label>
+                  <input
+                    type={showSecPasscodes ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={secConfirmPasscode}
+                    onChange={(e) => setSecConfirmPasscode(e.target.value)}
+                    placeholder="Re-enter new passcode"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {secError && (
+                <p className="text-xs text-rose-600 font-bold">{secError}</p>
+              )}
+              {secSuccess && (
+                <p className="text-xs text-emerald-700 font-bold">{secSuccess}</p>
+              )}
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSecurityModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={secLoading}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold shadow-xs cursor-pointer"
+                >
+                  {secLoading ? 'Saving...' : 'Save Security Settings'}
                 </button>
               </div>
             </form>

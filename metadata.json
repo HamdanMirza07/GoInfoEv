@@ -1,6 +1,6 @@
 {
   "name": "goinfoev",
-  "description": "goinfoev - Pakistan EV Analytics, Subscription-based Calculators with 7 free trial uses, EasyPaisa/JazzCash payments, Admin Approval Dashboard, Range Estimator, Charging Cost, and Fleet Explorer.",
+  "description": "goinfoEV - Global & Pakistan EV Analytics, 150+ Electric Bike Specs, Range Estimator, Charging Cost, EV vs Petrol Savings, Solar Sizing & Rider Profit Suite.",
   "requestFramePermissions": [
     "geolocation"
   ],

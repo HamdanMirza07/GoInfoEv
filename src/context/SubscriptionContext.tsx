@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { UserSubscription } from '../types/subscription';
+import { clearUserToken, getUserAuthHeaders, setUserToken } from '../utils/authHeaders';
 
 interface SubscriptionContextType {
   user: UserSubscription | null;
@@ -65,7 +66,10 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   const refreshStatus = useCallback(async () => {
     if (!user?.identifier) return;
     try {
-      const res = await fetch(`/api/subscriptions/user/${encodeURIComponent(user.identifier)}`);
+      const res = await fetch(`/api/subscriptions/user/${encodeURIComponent(user.identifier)}`, {
+        headers: getUserAuthHeaders(),
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setUser((prev) => {
@@ -114,7 +118,8 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       try {
         fetch('/api/subscriptions/usage', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getUserAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify({ identifier: user.identifier, toolName: calculatorName })
         }).catch(() => {});
       } catch {}
@@ -139,6 +144,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       const res = await fetch('/api/subscriptions/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           identifier: identifier.trim(),
           name: name?.trim(),
@@ -152,6 +158,9 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
         return { success: false, error: data.error || 'Authentication failed' };
       }
 
+      if (data.token) {
+        setUserToken(data.token);
+      }
       setUser(data.user);
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user));
 
@@ -182,7 +191,8 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const res = await fetch('/api/subscriptions/request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getUserAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({
           identifier: user.identifier,
           name: user.name,
@@ -198,6 +208,9 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
         return { success: false, error: resData.error || 'Failed to submit payment details' };
       }
 
+      if (resData.token) {
+        setUserToken(resData.token);
+      }
       setUser(resData.user);
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(resData.user));
       return { success: true };
@@ -208,6 +221,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const logout = () => {
     setUser(null);
+    clearUserToken();
     localStorage.removeItem(STORAGE_KEY_USER);
   };
 

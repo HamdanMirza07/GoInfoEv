@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -5,6 +6,104 @@ import nodemailer from "nodemailer";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import { EV_MODELS, EVModel } from "./src/data/evModels";
+import { ALL_BLOG_POSTS } from "./src/data/allBlogPosts";
+import {
+  resolveSeoForPath,
+  STATIC_ROUTE_SEO,
+  type ResolvedSeo,
+  type SeoTabKey,
+} from "./src/seo/seoConfig";
+import {
+  ADMIN_COOKIE_NAME,
+  USER_COOKIE_NAME,
+  clearAdminResetOtp,
+  clearAuthCookie,
+  createAdminResetOtp,
+  createRateLimiter,
+  escapeHtml,
+  extractAuthToken,
+  getAdminRecoveryEmail,
+  hasStoredAdminPasscode,
+  hashPassword,
+  isValidEmail,
+  maskEmail,
+  requireAdminAuth,
+  sanitizeText,
+  securityHeadersMiddleware,
+  setAuthCookie,
+  signAuthToken,
+  updateAdminPasscode,
+  updateAdminRecoveryEmail,
+  validateSafeImageUpload,
+  verifyAdminPasscode,
+  verifyAdminResetOtp,
+  verifyAuthToken,
+  verifyPassword,
+} from "./src/server/security";
+
+function getRequestOrigin(req: express.Request): string {
+  if (process.env.APP_URL && process.env.APP_URL.trim()) {
+    return process.env.APP_URL.trim().replace(/\/+$/, "");
+  }
+  const protoHeader = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim();
+  const hostHeader = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() || req.get("host");
+  const protocol = protoHeader || req.protocol || "https";
+  return hostHeader ? `${protocol}://${hostHeader}` : "https://goinfoev.com";
+}
+
+function escapeHtmlAttr(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function injectSeoIntoHtml(html: string, seo: ResolvedSeo): string {
+  const safeTitle = escapeHtmlAttr(seo.title);
+  const safeDesc = escapeHtmlAttr(seo.description);
+  const safeKeywords = escapeHtmlAttr(seo.keywords);
+  const safeRobots = escapeHtmlAttr(seo.robots);
+  const safeCanonical = escapeHtmlAttr(seo.canonicalUrl);
+  const safeOgImage = escapeHtmlAttr(seo.ogImageUrl);
+  const safeOgType = escapeHtmlAttr(seo.ogType);
+
+  let out = html
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${safeTitle}</title>`)
+    .replace(/<meta\s+name="description"[^>]*>/i, `<meta name="description" content="${safeDesc}" />`)
+    .replace(/<meta\s+name="keywords"[^>]*>/i, `<meta name="keywords" content="${safeKeywords}" />`)
+    .replace(/<meta\s+name="robots"[^>]*>/i, `<meta name="robots" content="${safeRobots}" />`)
+    .replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${safeCanonical}" />`)
+    .replace(/<meta\s+property="og:type"[^>]*>/i, `<meta property="og:type" content="${safeOgType}" />`)
+    .replace(/<meta\s+property="og:title"[^>]*>/i, `<meta property="og:title" content="${safeTitle}" />`)
+    .replace(/<meta\s+property="og:description"[^>]*>/i, `<meta property="og:description" content="${safeDesc}" />`)
+    .replace(/<meta\s+property="og:url"[^>]*>/i, `<meta property="og:url" content="${safeCanonical}" />`)
+    .replace(/<meta\s+property="og:image"[^>]*>/i, `<meta property="og:image" content="${safeOgImage}" />`)
+    .replace(/<meta\s+name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${safeTitle}" />`)
+    .replace(/<meta\s+name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${safeDesc}" />`)
+    .replace(/<meta\s+name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${safeOgImage}" />`);
+
+  const jsonLdScripts = seo.jsonLd
+    .map((schema) => `<script type="application/ld+json" data-seo-jsonld="true">${JSON.stringify(schema)}</script>`)
+    .join("\n    ");
+
+  if (/<script[^>]*data-seo-jsonld="true"[^>]*>[\s\S]*?<\/script>/i.test(out)) {
+    out = out.replace(/<script[^>]*data-seo-jsonld="true"[^>]*>[\s\S]*?<\/script>/gi, jsonLdScripts);
+  } else {
+    out = out.replace(/<\/head>/i, `    ${jsonLdScripts}\n  </head>`);
+  }
+
+  return out;
+}
 
 // Lazy initialization of GoogleGenAI
 let geminiClient: GoogleGenAI | null = null;
@@ -64,28 +163,324 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  if (!process.env.ADMIN_PASSCODE || !process.env.SESSION_SECRET) {
+    console.warn("[Security] ADMIN_PASSCODE or SESSION_SECRET env var not set; set strong secrets in production environment.");
+  }
 
-  // Ensure public uploads directory exists
+  app.disable("x-powered-by");
+  app.set("trust proxy", 1);
+  app.use(securityHeadersMiddleware);
+
+  app.use(express.json({ limit: "8mb" }));
+  app.use(express.urlencoded({ limit: "8mb", extended: true }));
+
+  const generalApiLimiter = createRateLimiter({
+    windowMs: 60 * 1000,
+    max: 180,
+    keyPrefix: "api-global",
+  });
+  const adminLoginLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 8,
+    keyPrefix: "admin-login",
+    message: "Too many failed admin login attempts. Please try again in 15 minutes.",
+  });
+  const adminRecoveryLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    keyPrefix: "admin-recovery",
+    message: "Too many recovery email requests. Please wait 15 minutes before trying again.",
+  });
+  const authLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 25,
+    keyPrefix: "user-auth",
+    message: "Too many authentication requests. Please wait before trying again.",
+  });
+  const contactLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    keyPrefix: "contact",
+    message: "Too many contact inquiries sent. Please try again later.",
+  });
+  const botLimiter = createRateLimiter({
+    windowMs: 10 * 60 * 1000,
+    max: 40,
+    keyPrefix: "bot",
+    message: "Chat rate limit reached. Please wait a few minutes.",
+  });
+
+  app.use("/api", generalApiLimiter);
+
+  // Ensure public uploads directory exists & serve safely
   const publicUploadsDir = path.join(process.cwd(), "public", "uploads");
   if (!fs.existsSync(publicUploadsDir)) {
     fs.mkdirSync(publicUploadsDir, { recursive: true });
   }
-  app.use("/uploads", express.static(publicUploadsDir));
-  app.use("/assets", express.static(path.join(process.cwd(), "public", "assets")));
+  app.use(
+    "/uploads",
+    (req, res, next) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "default-src 'none'");
+      next();
+    },
+    express.static(publicUploadsDir, { dotfiles: "deny" })
+  );
+  app.use("/assets", express.static(path.join(process.cwd(), "public", "assets"), { dotfiles: "deny" }));
 
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Admin Session Authentication
+  app.post("/api/admin/login", adminLoginLimiter, (req, res) => {
+    const passcode = typeof req.body?.passcode === "string" ? req.body.passcode : "";
+    if (!verifyAdminPasscode(passcode)) {
+      return res.status(401).json({ error: "Invalid admin security passcode." });
+    }
+    const maxAgeMs = 12 * 60 * 60 * 1000;
+    const expiresAt = Date.now() + maxAgeMs;
+    const token = signAuthToken({ role: "admin", sub: "admin", exp: expiresAt });
+    setAuthCookie(res, req, ADMIN_COOKIE_NAME, token, maxAgeMs);
+    return res.json({ success: true, token, expiresAt });
+  });
+
+  app.get("/api/admin/session", (req, res) => {
+    const token = extractAuthToken(req, ADMIN_COOKIE_NAME);
+    const verified = verifyAuthToken(token);
+    res.json({ authenticated: Boolean(verified && verified.role === "admin") });
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    clearAuthCookie(res, req, ADMIN_COOKIE_NAME);
+    res.json({ success: true });
+  });
+
+  // Helper to configure Nodemailer transporter from SMTP_* or Gmail App Password env vars
+  function getMailTransportConfig(): {
+    configured: boolean;
+    fromUser: string;
+    transporter: nodemailer.Transporter | null;
+  } {
+    const gmailUser = process.env.GMAIL_USER?.trim();
+    const gmailAppPass = process.env.GMAIL_APP_PASSWORD?.trim();
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
+    if (smtpHost && smtpUser && smtpPass) {
+      return {
+        configured: true,
+        fromUser: smtpUser,
+        transporter: nodemailer.createTransport({
+          host: smtpHost,
+          port: Number(process.env.SMTP_PORT) || 587,
+          secure: process.env.SMTP_SECURE === "true",
+          auth: { user: smtpUser, pass: smtpPass },
+        }),
+      };
+    }
+
+    const user = gmailUser || smtpUser || "";
+    const rawPass = gmailAppPass || smtpPass || "";
+    const pass = gmailAppPass ? rawPass.replace(/\s+/g, "") : rawPass;
+    if (user && pass) {
+      return {
+        configured: true,
+        fromUser: user,
+        transporter: nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true,
+          auth: { user, pass },
+        }),
+      };
+    }
+
+    return { configured: false, fromUser: "", transporter: null };
+  }
+
+  // Public-safe Admin Recovery Status (exposes masked email only, never full email or secrets)
+  app.get("/api/admin/recovery-status", (req, res) => {
+    const recoveryEmail = getAdminRecoveryEmail();
+    const mailConfig = getMailTransportConfig();
+    res.json({
+      maskedEmail: maskEmail(recoveryEmail),
+      smtpConfigured: mailConfig.configured,
+    });
+  });
+
+  // Step 1: Send 6-Digit Forgot Passcode OTP strictly to registered Admin Gmail
+  app.post("/api/admin/forgot-passcode", adminRecoveryLimiter, async (req, res) => {
+    const recoveryEmail = getAdminRecoveryEmail();
+    const masked = maskEmail(recoveryEmail);
+    const confirmEmail = sanitizeText(req.body?.email, 254).toLowerCase();
+
+    if (confirmEmail && confirmEmail !== recoveryEmail.toLowerCase()) {
+      return res.status(400).json({
+        error: `Entered email does not match the registered Admin recovery Gmail (${masked}).`,
+      });
+    }
+
+    const mailConfig = getMailTransportConfig();
+    if (!mailConfig.configured || !mailConfig.transporter) {
+      return res.status(503).json({
+        code: "SMTP_NOT_CONFIGURED",
+        maskedEmail: masked,
+        error:
+          "Gmail email dispatch is not configured on the server yet. Add GMAIL_USER and GMAIL_APP_PASSWORD (or SMTP_HOST/SMTP_USER/SMTP_PASS) in your environment Secrets.",
+      });
+    }
+
+    const otpResult = createAdminResetOtp();
+    if ("error" in otpResult) {
+      return res.status(429).json({
+        error: otpResult.error,
+        retryAfterSeconds: otpResult.retryAfterSeconds,
+      });
+    }
+
+    const origin = getRequestOrigin(req);
+    const clientIp = req.ip || req.socket.remoteAddress || "Unknown";
+
+    try {
+      await mailConfig.transporter.sendMail({
+        from: `"goinfoEV Security" <${mailConfig.fromUser}>`,
+        to: recoveryEmail,
+        subject: `[goinfoEV] Admin Passcode Recovery Code: ${otpResult.code}`,
+        text: `goinfoEV Admin Control Portal — Passcode Reset Request
+
+Your 6-digit one-time recovery code is: ${otpResult.code}
+
+This code expires in ${otpResult.expiresInMinutes} minutes and can only be used once.
+Portal URL: ${origin}/admin
+Requested From IP: ${clientIp}
+Timestamp: ${new Date().toISOString()}
+
+If you did not request this reset, ignore this email — your Admin Passcode has not been changed.`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+            <div style="border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px;">
+              <h2 style="margin: 0; color: #0f172a; font-size: 20px;">goinfo<span style="color: #2563eb;">EV</span> Admin Security</h2>
+              <p style="margin: 4px 0 0; color: #64748b; font-size: 12px;">Admin Control Portal Passcode Recovery</p>
+            </div>
+            <p style="color: #334155; font-size: 14px; line-height: 1.6; margin-top: 0;">
+              A passcode reset was requested for the <strong>goinfoEV Admin Control Portal</strong>. Use the 6-digit verification code below to set a new Admin Passcode:
+            </p>
+            <div style="background: #f1f5f9; border: 1px dashed #2563eb; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; margin-bottom: 6px;">One-Time Recovery Code</div>
+              <div style="font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #0f172a;">${escapeHtml(otpResult.code)}</div>
+            </div>
+            <p style="color: #475569; font-size: 13px; line-height: 1.5;">
+              • Valid for <strong>${otpResult.expiresInMinutes} minutes</strong> (single use only).<br/>
+              • Request IP: <code>${escapeHtml(clientIp)}</code>
+            </p>
+            <p style="color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-bottom: 0;">
+              If you did not request this code, safely ignore this email. Your existing passcode remains unchanged.
+            </p>
+          </div>
+        `,
+      });
+
+      return res.json({
+        success: true,
+        maskedEmail: masked,
+        expiresInMinutes: otpResult.expiresInMinutes,
+        message: `6-digit recovery code sent to ${masked}. Check your Gmail inbox (and Spam folder).`,
+      });
+    } catch (err: any) {
+      clearAdminResetOtp();
+      console.error("[Security] Failed to send Admin recovery email:", err?.message || err);
+      return res.status(500).json({
+        error: "Could not send recovery email via Gmail SMTP. Please verify your SMTP / Gmail App Password credentials.",
+      });
+    }
+  });
+
+  // Step 2: Verify 6-digit OTP and set a new scrypt-hashed Admin Passcode + issue fresh Admin session
+  app.post("/api/admin/reset-passcode", adminLoginLimiter, (req, res) => {
+    const code = typeof req.body?.code === "string" ? req.body.code : "";
+    const newPasscode = typeof req.body?.newPasscode === "string" ? req.body.newPasscode.trim() : "";
+
+    if (newPasscode.length < 6 || newPasscode.length > 128) {
+      return res.status(400).json({
+        error: "New Admin Passcode must be at least 6 characters long.",
+      });
+    }
+
+    const check = verifyAdminResetOtp(code);
+    if (!check.valid) {
+      return res.status(401).json({ error: check.error || "Invalid recovery code." });
+    }
+
+    try {
+      updateAdminPasscode(newPasscode);
+    } catch (err: any) {
+      return res.status(400).json({ error: err?.message || "Failed to update passcode." });
+    }
+
+    const maxAgeMs = 12 * 60 * 60 * 1000;
+    const expiresAt = Date.now() + maxAgeMs;
+    const token = signAuthToken({ role: "admin", sub: "admin", exp: expiresAt });
+    setAuthCookie(res, req, ADMIN_COOKIE_NAME, token, maxAgeMs);
+
+    return res.json({
+      success: true,
+      token,
+      expiresAt,
+      message: "Admin Passcode reset successfully. You are now signed in.",
+    });
+  });
+
+  // Authenticated Admin: View & update Admin Passcode & Recovery Gmail
+  app.get("/api/admin/security-settings", requireAdminAuth, (req, res) => {
+    const mailConfig = getMailTransportConfig();
+    res.json({
+      recoveryEmail: getAdminRecoveryEmail(),
+      smtpConfigured: mailConfig.configured,
+      hasCustomPasscode: hasStoredAdminPasscode() || Boolean(process.env.ADMIN_PASSCODE?.trim()),
+    });
+  });
+
+  app.post("/api/admin/change-passcode", requireAdminAuth, (req, res) => {
+    const currentPasscode = typeof req.body?.currentPasscode === "string" ? req.body.currentPasscode : "";
+    const newPasscode = typeof req.body?.newPasscode === "string" ? req.body.newPasscode.trim() : "";
+    const recoveryEmail = typeof req.body?.recoveryEmail === "string" ? req.body.recoveryEmail.trim() : "";
+
+    if (!verifyAdminPasscode(currentPasscode)) {
+      return res.status(401).json({ error: "Current Admin Passcode is incorrect." });
+    }
+
+    try {
+      if (newPasscode) {
+        updateAdminPasscode(newPasscode);
+      }
+      let savedEmail = getAdminRecoveryEmail();
+      if (recoveryEmail) {
+        savedEmail = updateAdminRecoveryEmail(recoveryEmail);
+      }
+      return res.json({
+        success: true,
+        recoveryEmail: savedEmail,
+        message: newPasscode
+          ? "Admin Passcode and recovery settings updated successfully."
+          : "Admin recovery email updated successfully.",
+      });
+    } catch (err: any) {
+      return res.status(400).json({ error: err?.message || "Failed to update admin security settings." });
+    }
+  });
+
   // Pakistani EV AI Assistant Chatbot API (Powered by Gemini with smart local knowledge fallback)
-  app.post("/api/bot/chat", async (req, res) => {
+  app.post("/api/bot/chat", botLimiter, async (req, res) => {
     try {
       const { message, history } = req.body;
       if (!message || typeof message !== "string" || message.trim() === "") {
         return res.status(400).json({ error: "Message is required" });
+      }
+      if (message.length > 1500) {
+        return res.status(400).json({ error: "Message exceeds maximum length of 1500 characters" });
       }
 
       const userText = message.trim();
@@ -138,10 +533,10 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
           const contents: any[] = [];
           if (Array.isArray(history)) {
             history.slice(-8).forEach((h: any) => {
-              if (h.role && h.content) {
+              if (h && typeof h === "object" && h.role && h.content) {
                 contents.push({
                   role: h.role === "user" ? "user" : "model",
-                  parts: [{ text: String(h.content) }],
+                  parts: [{ text: String(h.content).slice(0, 1500) }],
                 });
               }
             });
@@ -246,11 +641,19 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
   }
 
   // Contact Form Submission API - Sends to BOTH configured emails
-  app.post("/api/contact", async (req, res) => {
+  app.post("/api/contact", contactLimiter, async (req, res) => {
     try {
-      const { name, email, phone, subject, message } = req.body;
-      if (!name || !email || !message) {
+      const cleanName = sanitizeText(req.body?.name, 100);
+      const cleanEmail = sanitizeText(req.body?.email, 254);
+      const cleanPhone = sanitizeText(req.body?.phone, 40);
+      const cleanSubject = sanitizeText(req.body?.subject, 140) || "General EV Inquiry";
+      const cleanMessage = sanitizeText(req.body?.message, 3000);
+
+      if (!cleanName || !cleanEmail || !cleanMessage) {
         return res.status(400).json({ error: "Name, email and message are required fields." });
+      }
+      if (!isValidEmail(cleanEmail)) {
+        return res.status(400).json({ error: "Please provide a valid email address." });
       }
 
       const primaryEmail = process.env.CONTACT_PRIMARY_EMAIL || "Hamdan7394@gmail.com";
@@ -260,11 +663,11 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
       const ticketId = `EV-PK-${Math.floor(100000 + Math.random() * 900000)}`;
       const inquiry: ContactInquiry = {
         id: ticketId,
-        name: String(name).trim(),
-        email: String(email).trim(),
-        phone: phone ? String(phone).trim() : "Not provided",
-        subject: subject ? String(subject).trim() : "General EV Inquiry",
-        message: String(message).trim(),
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone || "Not provided",
+        subject: cleanSubject,
+        message: cleanMessage,
         receivedAt: new Date().toISOString(),
         deliveredTo: recipients,
         status: "logged"
@@ -283,35 +686,34 @@ KEY ECOSYSTEM FACTS & PRICING IN PAKISTAN:
       let emailDispatched = false;
       let dispatchMessage = `Inquiry recorded for dispatch to ${primaryEmail} & ${secondaryEmail}.`;
 
-      // If SMTP credentials exist, send real email directly via Nodemailer
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      // If SMTP or Gmail App Password credentials exist, send real email directly via Nodemailer
+      const contactMailConfig = getMailTransportConfig();
+      if (contactMailConfig.configured && contactMailConfig.transporter) {
         try {
-          const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT) || 587,
-            secure: process.env.SMTP_SECURE === "true",
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            },
-          });
+          const transporter = contactMailConfig.transporter;
+
+          const safeHtmlName = escapeHtml(cleanName);
+          const safeHtmlEmail = escapeHtml(cleanEmail);
+          const safeHtmlPhone = escapeHtml(cleanPhone || "Not provided");
+          const safeHtmlSubject = escapeHtml(cleanSubject);
+          const safeHtmlMessage = escapeHtml(cleanMessage).replace(/\n/g, "<br/>");
 
           await transporter.sendMail({
-            from: `"${name} via goinfoEV" <${process.env.SMTP_USER}>`,
+            from: `"goinfoEV Contact" <${contactMailConfig.fromUser}>`,
             to: primaryEmail,
             cc: secondaryEmail,
-            replyTo: email,
-            subject: `[goinfoEV Inquiry #${ticketId}] ${subject || "EV Inquiry"}`,
+            replyTo: cleanEmail,
+            subject: `[goinfoEV Inquiry #${ticketId}] ${cleanSubject}`,
             text: `New Inquiry Received on goinfoEV Platform:
 
 Ticket ID: #${ticketId}
-Sender: ${name}
-Sender Email: ${email}
-Phone: ${phone || 'Not provided'}
-Subject: ${subject || 'General EV Inquiry'}
+Sender: ${cleanName}
+Sender Email: ${cleanEmail}
+Phone: ${cleanPhone || 'Not provided'}
+Subject: ${cleanSubject}
 
 Message:
-${message}
+${cleanMessage}
 
 --------------------------------------------------
 Delivered to:
@@ -331,19 +733,19 @@ Timestamp: ${new Date().toLocaleString()}`,
                   <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                     <tr>
                       <td style="padding: 6px 0; color: #64748b; width: 100px;"><strong>Name:</strong></td>
-                      <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${name}</td>
+                      <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${safeHtmlName}</td>
                     </tr>
                     <tr>
                       <td style="padding: 6px 0; color: #64748b;"><strong>Email:</strong></td>
-                      <td style="padding: 6px 0; color: #2563eb;"><a href="mailto:${email}" style="color: #2563eb; text-decoration: none;">${email}</a></td>
+                      <td style="padding: 6px 0; color: #2563eb;"><a href="mailto:${safeHtmlEmail}" style="color: #2563eb; text-decoration: none;">${safeHtmlEmail}</a></td>
                     </tr>
                     <tr>
                       <td style="padding: 6px 0; color: #64748b;"><strong>Phone:</strong></td>
-                      <td style="padding: 6px 0; color: #0f172a;">${phone || 'Not provided'}</td>
+                      <td style="padding: 6px 0; color: #0f172a;">${safeHtmlPhone}</td>
                     </tr>
                     <tr>
                       <td style="padding: 6px 0; color: #64748b;"><strong>Subject:</strong></td>
-                      <td style="padding: 6px 0; color: #0f172a;">${subject || 'General EV Inquiry'}</td>
+                      <td style="padding: 6px 0; color: #0f172a;">${safeHtmlSubject}</td>
                     </tr>
                   </table>
                 </div>
@@ -351,7 +753,7 @@ Timestamp: ${new Date().toLocaleString()}`,
                 <div style="margin-bottom: 24px;">
                   <h4 style="margin: 0 0 8px 0; color: #334155; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Message Details:</h4>
                   <div style="background-color: #ffffff; border-left: 4px solid #2563eb; padding: 14px 16px; font-size: 14px; line-height: 1.6; color: #1e293b; background: #fafafa; border-radius: 4px;">
-                    ${message.replace(/\n/g, '<br/>')}
+                    ${safeHtmlMessage}
                   </div>
                 </div>
 
@@ -360,8 +762,8 @@ Timestamp: ${new Date().toLocaleString()}`,
                     ✓ Dispatched simultaneously to both:
                   </p>
                   <ul style="margin: 4px 0 0 16px; padding: 0;">
-                    <li><strong>${primaryEmail}</strong> (Primary)</li>
-                    <li><strong>${secondaryEmail}</strong> (Secondary / Tech Partner)</li>
+                    <li><strong>${escapeHtml(primaryEmail)}</strong> (Primary)</li>
+                    <li><strong>${escapeHtml(secondaryEmail)}</strong> (Secondary / Tech Partner)</li>
                   </ul>
                 </div>
               </div>
@@ -378,9 +780,9 @@ Timestamp: ${new Date().toLocaleString()}`,
 
       // Generate pre-filled direct mailto string (To primary, CC secondary)
       const mailtoUrl = `mailto:${primaryEmail}?cc=${secondaryEmail}&subject=${encodeURIComponent(
-        `[goinfoEV Inquiry #${ticketId}] ${subject || 'EV Inquiry'}`
+        `[goinfoEV Inquiry #${ticketId}] ${cleanSubject || 'EV Inquiry'}`
       )}&body=${encodeURIComponent(
-        `Hi Hamdan & Team,\n\nName: ${name}\nPhone: ${phone || 'Not provided'}\nEmail: ${email}\nReference: #${ticketId}\n\nMessage:\n${message}\n\n---\nSent via goinfoEV Pakistan Contact Portal`
+        `Hi Hamdan & Team,\n\nName: ${cleanName}\nPhone: ${cleanPhone || 'Not provided'}\nEmail: ${cleanEmail}\nReference: #${ticketId}\n\nMessage:\n${cleanMessage}\n\n---\nSent via goinfoEV Pakistan Contact Portal`
       )}`;
 
       res.status(200).json({
@@ -398,25 +800,25 @@ Timestamp: ${new Date().toLocaleString()}`,
     }
   });
 
-  // Get Inquiries (for verification)
-  app.get("/api/contact/inquiries", (req, res) => {
+  // Get Inquiries (Admin only)
+  app.get("/api/contact/inquiries", requireAdminAuth, (req, res) => {
     res.json({
       count: contactInquiries.length,
       inquiries: contactInquiries
     });
   });
 
-  // Inventory API
-  app.get("/api/inventory", (req, res) => {
+  // Inventory API (Admin only)
+  app.get("/api/inventory", requireAdminAuth, (req, res) => {
     res.json(inventory);
   });
 
-  app.post("/api/inventory", (req, res) => {
+  app.post("/api/inventory", requireAdminAuth, (req, res) => {
     const { name, cat, price, qty, alert } = req.body;
     const newItem: InventoryItem = {
       id: "inv-" + Date.now(),
-      name: name || "New Product",
-      cat: cat || "General",
+      name: sanitizeText(name, 120) || "New Product",
+      cat: sanitizeText(cat, 60) || "General",
       price: Number(price) || 0,
       qty: Number(qty) || 0,
       alert: Number(alert) || 5
@@ -425,7 +827,7 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.status(201).json(newItem);
   });
 
-  app.put("/api/inventory/:id", (req, res) => {
+  app.put("/api/inventory/:id", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     const index = inventory.findIndex(item => item.id === id);
     if (index === -1) {
@@ -434,7 +836,8 @@ Timestamp: ${new Date().toLocaleString()}`,
     const existing = inventory[index];
     inventory[index] = {
       ...existing,
-      ...req.body,
+      name: req.body.name !== undefined ? sanitizeText(req.body.name, 120) : existing.name,
+      cat: req.body.cat !== undefined ? sanitizeText(req.body.cat, 60) : existing.cat,
       price: req.body.price !== undefined ? Number(req.body.price) : existing.price,
       qty: req.body.qty !== undefined ? Number(req.body.qty) : existing.qty,
       alert: req.body.alert !== undefined ? Number(req.body.alert) : existing.alert
@@ -442,7 +845,7 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.json(inventory[index]);
   });
 
-  app.delete("/api/inventory/:id", (req, res) => {
+  app.delete("/api/inventory/:id", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     inventory = inventory.filter(item => item.id !== id);
     res.json({ success: true, id });
@@ -660,7 +1063,29 @@ Timestamp: ${new Date().toLocaleString()}`,
     }
   }
 
-  // 1. Get User Subscription Status & Usage Logs
+  function sanitizeSubscriptionRecord(u: SubscriptionRecord) {
+    const { password: _pwd, ...safeRecord } = u;
+    return safeRecord;
+  }
+
+  function hasValidUserOrAdminAccess(req: express.Request, targetUser: SubscriptionRecord): boolean {
+    const adminToken = extractAuthToken(req, ADMIN_COOKIE_NAME);
+    const adminVerified = verifyAuthToken(adminToken);
+    if (adminVerified?.role === "admin") return true;
+
+    const userToken = extractAuthToken(req, USER_COOKIE_NAME);
+    const userVerified = verifyAuthToken(userToken);
+    if (
+      userVerified?.role === "user" &&
+      (userVerified.sub.toLowerCase() === targetUser.identifier.toLowerCase().trim() ||
+        userVerified.sub === targetUser.id)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  // 1. Get User Subscription Status & Usage Logs (Authenticated user or Admin only)
   app.get("/api/subscriptions/user/:identifier", (req, res) => {
     const rawId = req.params.identifier.toLowerCase().trim();
     const user = subscriptions.find(
@@ -669,25 +1094,10 @@ Timestamp: ${new Date().toLocaleString()}`,
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    res.json({
-      id: user.id,
-      name: user.name,
-      identifier: user.identifier,
-      authType: user.authType,
-      status: user.status,
-      plan: user.plan,
-      planName: user.planName,
-      amount: user.amount,
-      trxId: user.trxId,
-      freeUsesCount: user.freeUsesCount,
-      usageLogs: user.usageLogs || [],
-      paymentMethod: user.paymentMethod,
-      notes: user.notes,
-      approvedAt: user.approvedAt,
-      disallowedReason: user.disallowedReason,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    });
+    if (!hasValidUserOrAdminAccess(req, user)) {
+      return res.status(401).json({ error: "Authentication required to view account details." });
+    }
+    res.json(sanitizeSubscriptionRecord(user));
   });
 
   // 1b. Public & Admin Endpoint: Get Payment Methods Config
@@ -696,7 +1106,7 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 1c. ADMIN: Update Payment Methods & Pricing Config
-  app.put("/api/admin/payment-config", (req, res) => {
+  app.put("/api/admin/payment-config", requireAdminAuth, (req, res) => {
     try {
       const newConfig = req.body;
       if (!newConfig || typeof newConfig !== "object") {
@@ -719,42 +1129,80 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 2. User Sign-in / Registration (Phone or Email)
-  app.post("/api/subscriptions/auth", (req, res) => {
+  app.post("/api/subscriptions/auth", authLimiter, (req, res) => {
     try {
       const { name, identifier, authType, password } = req.body;
-      if (!identifier || typeof identifier !== "string" || !identifier.trim()) {
+      const cleanIdentifier = sanitizeText(identifier, 160);
+      if (!cleanIdentifier) {
         return res.status(400).json({ error: "Phone number or email is required." });
       }
 
-      const cleanIdentifier = identifier.trim();
-      const detectedAuthType = authType || (cleanIdentifier.includes("@") ? "email" : "phone");
-      const cleanName = name ? name.trim() : (detectedAuthType === "email" ? cleanIdentifier.split("@")[0] : "EV User");
+      const detectedAuthType = authType === "email" || authType === "phone"
+        ? authType
+        : cleanIdentifier.includes("@")
+        ? "email"
+        : "phone";
+
+      if (detectedAuthType === "email" && !isValidEmail(cleanIdentifier)) {
+        return res.status(400).json({ error: "Please enter a valid email address." });
+      }
+
+      const cleanName = sanitizeText(name, 80) || (detectedAuthType === "email" ? cleanIdentifier.split("@")[0] : "EV User");
+      const cleanPassword = typeof password === "string" ? password.trim() : "";
 
       let existing = subscriptions.find(
         s => s.identifier.toLowerCase().trim() === cleanIdentifier.toLowerCase()
       );
 
       if (existing) {
-        // User already exists, update name if provided
-        if (name && name.trim() && existing.name !== cleanName) {
+        // Verify password if account has a password set
+        if (existing.password) {
+          if (!cleanPassword || !verifyPassword(cleanPassword, existing.password)) {
+            return res.status(401).json({ error: "Incorrect password for this account." });
+          }
+          // Migrate legacy plaintext password to scrypt hash automatically
+          if (!existing.password.startsWith("scrypt:")) {
+            existing.password = hashPassword(cleanPassword);
+            saveSubscriptions();
+          }
+        } else if (cleanPassword.length >= 6) {
+          existing.password = hashPassword(cleanPassword);
+          saveSubscriptions();
+        }
+
+        if (name && cleanName && existing.name !== cleanName) {
           existing.name = cleanName;
           existing.updatedAt = new Date().toISOString();
           saveSubscriptions();
         }
+
+        const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+        const token = signAuthToken({
+          role: "user",
+          sub: existing.identifier,
+          exp: Date.now() + maxAgeMs,
+        });
+        setAuthCookie(res, req, USER_COOKIE_NAME, token, maxAgeMs);
+
         return res.json({
           message: "Signed in successfully",
           isNew: false,
-          user: existing
+          token,
+          user: sanitizeSubscriptionRecord(existing),
         });
       }
 
-      // Create new user with 0 initial free uses used (they get 7 free uses)
+      if (cleanPassword && cleanPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters long." });
+      }
+
+      // Create new user with hashed password and 0 initial free uses
       const newUser: SubscriptionRecord = {
         id: "sub-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
         name: cleanName,
         identifier: cleanIdentifier,
         authType: detectedAuthType,
-        password: password || undefined,
+        password: cleanPassword ? hashPassword(cleanPassword) : undefined,
         status: "free",
         freeUsesCount: 0,
         createdAt: new Date().toISOString(),
@@ -764,10 +1212,19 @@ Timestamp: ${new Date().toLocaleString()}`,
       subscriptions.unshift(newUser);
       saveSubscriptions();
 
+      const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+      const token = signAuthToken({
+        role: "user",
+        sub: newUser.identifier,
+        exp: Date.now() + maxAgeMs,
+      });
+      setAuthCookie(res, req, USER_COOKIE_NAME, token, maxAgeMs);
+
       res.status(201).json({
         message: "Account created successfully",
         isNew: true,
-        user: newUser
+        token,
+        user: sanitizeSubscriptionRecord(newUser),
       });
     } catch (err: any) {
       console.error("Error in /api/subscriptions/auth:", err);
@@ -776,36 +1233,45 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 3. User Submits Subscription Request (Payment details)
-  app.post("/api/subscriptions/request", (req, res) => {
+  app.post("/api/subscriptions/request", authLimiter, (req, res) => {
     try {
-      const { identifier, name, plan, paymentMethod, trxId, notes } = req.body;
-      if (!identifier || !trxId) {
+      const cleanIdentifier = sanitizeText(req.body?.identifier, 160);
+      const cleanTrxId = sanitizeText(req.body?.trxId, 80);
+      const cleanName = sanitizeText(req.body?.name, 80);
+      const cleanNotes = sanitizeText(req.body?.notes, 400);
+      const { plan, paymentMethod } = req.body;
+
+      if (!cleanIdentifier || !cleanTrxId) {
         return res.status(400).json({ error: "Identifier (phone/email) and Transaction ID are required." });
       }
 
-      const cleanIdentifier = identifier.trim();
       let user = subscriptions.find(
         s => s.identifier.toLowerCase().trim() === cleanIdentifier.toLowerCase()
       );
 
+      if (user && !hasValidUserOrAdminAccess(req, user)) {
+        return res.status(401).json({ error: "Please sign in to submit payment verification for this account." });
+      }
+
       const planType = plan === "annual" ? "annual" : "monthly";
       const amount = planType === "annual" ? 2499 : 499;
       const planName = planType === "annual" ? "Annual Full Suite Pro" : "Monthly Unlimited Pro";
+      const safeMethod = paymentMethod === "jazzcash" || paymentMethod === "bank" ? paymentMethod : "easypaisa";
 
       if (!user) {
         // Create user if not already signed up
         user = {
           id: "sub-" + Date.now(),
-          name: name ? name.trim() : (cleanIdentifier.includes("@") ? cleanIdentifier.split("@")[0] : "EV User"),
+          name: cleanName || (cleanIdentifier.includes("@") ? cleanIdentifier.split("@")[0] : "EV User"),
           identifier: cleanIdentifier,
           authType: cleanIdentifier.includes("@") ? "email" : "phone",
           status: "pending",
           plan: planType,
           planName,
           amount,
-          paymentMethod: paymentMethod || "easypaisa",
-          trxId: String(trxId).trim(),
-          notes: notes ? String(notes).trim() : undefined,
+          paymentMethod: safeMethod,
+          trxId: cleanTrxId,
+          notes: cleanNotes || undefined,
           freeUsesCount: 7,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -813,23 +1279,32 @@ Timestamp: ${new Date().toLocaleString()}`,
         subscriptions.unshift(user);
       } else {
         // Update existing user with pending subscription request
-        user.name = name ? name.trim() : user.name;
+        user.name = cleanName || user.name;
         user.status = "pending";
         user.plan = planType;
         user.planName = planName;
         user.amount = amount;
-        user.paymentMethod = paymentMethod || "easypaisa";
-        user.trxId = String(trxId).trim();
-        user.notes = notes ? String(notes).trim() : user.notes;
+        user.paymentMethod = safeMethod;
+        user.trxId = cleanTrxId;
+        user.notes = cleanNotes || user.notes;
         user.updatedAt = new Date().toISOString();
       }
 
       saveSubscriptions();
 
+      const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+      const token = signAuthToken({
+        role: "user",
+        sub: user.identifier,
+        exp: Date.now() + maxAgeMs,
+      });
+      setAuthCookie(res, req, USER_COOKIE_NAME, token, maxAgeMs);
+
       res.status(200).json({
         success: true,
         message: "Subscription request submitted successfully! Admin will verify and activate your account.",
-        user
+        token,
+        user: sanitizeSubscriptionRecord(user),
       });
     } catch (err: any) {
       console.error("Error in /api/subscriptions/request:", err);
@@ -851,12 +1326,15 @@ Timestamp: ${new Date().toLocaleString()}`,
       const user = subscriptions.find(s => s.identifier.toLowerCase().trim() === cleanId);
 
       if (user) {
+        if (!hasValidUserOrAdminAccess(req, user)) {
+          return res.status(401).json({ error: "Session verification required." });
+        }
         if (!user.usageLogs) {
           user.usageLogs = [];
         }
         if (toolName) {
           user.usageLogs.unshift({
-            toolName: String(toolName),
+            toolName: sanitizeText(toolName, 100),
             timestamp: new Date().toISOString()
           });
           if (user.usageLogs.length > 50) {
@@ -873,7 +1351,7 @@ Timestamp: ${new Date().toLocaleString()}`,
             freeUsesCount: user.freeUsesCount,
             remaining: 9999,
             hasUnlimited: true,
-            user
+            user: sanitizeSubscriptionRecord(user),
           });
         }
 
@@ -891,7 +1369,7 @@ Timestamp: ${new Date().toLocaleString()}`,
           remaining: Math.max(0, MAX_FREE - user.freeUsesCount),
           isLocked,
           hasUnlimited: false,
-          user
+          user: sanitizeSubscriptionRecord(user),
         });
       }
 
@@ -902,7 +1380,7 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 5. ADMIN: List all subscriptions & metrics
-  app.get("/api/admin/subscriptions", (req, res) => {
+  app.get("/api/admin/subscriptions", requireAdminAuth, (req, res) => {
     const totalUsers = subscriptions.length;
     const pendingCount = subscriptions.filter(s => s.status === "pending").length;
     const approvedCount = subscriptions.filter(s => s.status === "approved").length;
@@ -920,12 +1398,12 @@ Timestamp: ${new Date().toLocaleString()}`,
         disallowedCount,
         totalRevenuePKR
       },
-      subscriptions
+      subscriptions: subscriptions.map(sanitizeSubscriptionRecord)
     });
   });
 
   // 6. ADMIN: Allow (Approve) or Disallow (Reject) User
-  app.post("/api/admin/subscriptions/:id/status", (req, res) => {
+  app.post("/api/admin/subscriptions/:id/status", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     const { status, reason } = req.body;
 
@@ -947,15 +1425,15 @@ Timestamp: ${new Date().toLocaleString()}`,
       item.disallowedReason = undefined;
     } else if (status === "disallowed") {
       item.disallowedAt = new Date().toISOString();
-      item.disallowedReason = reason || "Subscription disallowed by Admin";
+      item.disallowedReason = sanitizeText(reason, 250) || "Subscription disallowed by Admin";
     }
 
     saveSubscriptions();
-    res.json({ success: true, message: `User status changed to ${status}`, user: item });
+    res.json({ success: true, message: `User status changed to ${status}`, user: sanitizeSubscriptionRecord(item) });
   });
 
   // 7. ADMIN: Reset Free Uses (Give 7 more free uses)
-  app.post("/api/admin/subscriptions/:id/reset-free", (req, res) => {
+  app.post("/api/admin/subscriptions/:id/reset-free", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     const user = subscriptions.find(s => s.id === id);
     if (!user) {
@@ -964,11 +1442,11 @@ Timestamp: ${new Date().toLocaleString()}`,
     user.freeUsesCount = 0;
     user.updatedAt = new Date().toISOString();
     saveSubscriptions();
-    res.json({ success: true, message: "Free calculator uses reset to 7", user });
+    res.json({ success: true, message: "Free calculator uses reset to 7", user: sanitizeSubscriptionRecord(user) });
   });
 
   // 8. ADMIN: Delete record
-  app.delete("/api/admin/subscriptions/:id", (req, res) => {
+  app.delete("/api/admin/subscriptions/:id", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     subscriptions = subscriptions.filter(s => s.id !== id);
     saveSubscriptions();
@@ -976,19 +1454,19 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 9. ADMIN: Manually add new subscriber / user
-  app.post("/api/admin/subscriptions/manual", (req, res) => {
-    const { name, identifier, plan, status, paymentMethod, trxId, notes } = req.body;
-    if (!identifier) {
+  app.post("/api/admin/subscriptions/manual", requireAdminAuth, (req, res) => {
+    const cleanId = sanitizeText(req.body?.identifier, 160);
+    if (!cleanId) {
       return res.status(400).json({ error: "Phone number or email is required." });
     }
 
-    const cleanId = String(identifier).trim();
+    const { name, plan, status, paymentMethod, trxId, notes } = req.body;
     const planType = plan === "annual" ? "annual" : "monthly";
     const amount = planType === "annual" ? 2499 : 499;
 
     const newSub: SubscriptionRecord = {
       id: "sub-" + Date.now(),
-      name: name ? String(name).trim() : "Direct Subscriber",
+      name: sanitizeText(name, 80) || "Direct Subscriber",
       identifier: cleanId,
       authType: cleanId.includes("@") ? "email" : "phone",
       status: status || "approved",
@@ -996,8 +1474,8 @@ Timestamp: ${new Date().toLocaleString()}`,
       planName: planType === "annual" ? "Annual Full Suite Pro" : "Monthly Unlimited Pro",
       amount,
       paymentMethod: paymentMethod || "bank",
-      trxId: trxId ? String(trxId).trim() : `ADMIN-${Math.floor(100000 + Math.random() * 900000)}`,
-      notes: notes ? String(notes).trim() : "Added directly via Admin Dashboard",
+      trxId: sanitizeText(trxId, 80) || `ADMIN-${Math.floor(100000 + Math.random() * 900000)}`,
+      notes: sanitizeText(notes, 300) || "Added directly via Admin Dashboard",
       freeUsesCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -1007,7 +1485,7 @@ Timestamp: ${new Date().toLocaleString()}`,
     subscriptions.unshift(newSub);
     saveSubscriptions();
 
-    res.status(201).json({ success: true, user: newSub });
+    res.status(201).json({ success: true, user: sanitizeSubscriptionRecord(newSub) });
   });
 
   // ==========================================
@@ -1034,8 +1512,8 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.json({ success: true, count: liveCatalog.length, models: liveCatalog });
   });
 
-  // 1b. Update individual catalog model
-  app.put("/api/catalog/models/:id", (req, res) => {
+  // 1b. Update individual catalog model (Admin only)
+  app.put("/api/catalog/models/:id", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
     if (!updatedData || typeof updatedData !== "object") {
@@ -1064,8 +1542,8 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.json({ success: true, model: liveCatalog[index] });
   });
 
-  // 1c. Delete individual catalog model
-  app.delete("/api/catalog/models/:id", (req, res) => {
+  // 1c. Delete individual catalog model (Admin only)
+  app.delete("/api/catalog/models/:id", requireAdminAuth, (req, res) => {
     const { id } = req.params;
     const targetId = String(id).trim();
     const prevCount = liveCatalog.length;
@@ -1081,8 +1559,8 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.json({ success: true, count: liveCatalog.length, models: liveCatalog });
   });
 
-  // 1d. Delete entire brand fleet
-  app.delete("/api/catalog/brands/:brand", (req, res) => {
+  // 1d. Delete entire brand fleet (Admin only)
+  app.delete("/api/catalog/brands/:brand", requireAdminAuth, (req, res) => {
     const { brand } = req.params;
     const targetBrand = decodeURIComponent(String(brand)).toLowerCase().trim();
     const prevCount = liveCatalog.length;
@@ -1099,37 +1577,26 @@ Timestamp: ${new Date().toLocaleString()}`,
     res.json({ success: true, removedCount, count: liveCatalog.length, models: liveCatalog });
   });
 
-  // 1c. Direct Image File Upload API (saves to /public/uploads and returns accessible URL)
-  app.post("/api/catalog/upload-image", (req, res) => {
+  // 1c. Direct Image File Upload API (Admin only, raster formats & magic-byte verified)
+  app.post("/api/catalog/upload-image", requireAdminAuth, (req, res) => {
     try {
       const { dataUrl, filename } = req.body;
       if (!dataUrl || typeof dataUrl !== "string") {
         return res.status(400).json({ error: "dataUrl is required (base64 string)" });
       }
 
-      // Format: data:image/png;base64,iVBORw0KGgo...
-      const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-      if (!matches || matches.length !== 3) {
-        return res.status(400).json({ error: "Invalid base64 image data URL format" });
+      const validation = validateSafeImageUpload(dataUrl);
+      if (!validation.valid || !validation.buffer || !validation.ext) {
+        return res.status(400).json({ error: validation.error || "Invalid image file." });
       }
 
-      let subType = matches[1].toLowerCase();
-      const base64Content = matches[2];
-      const buffer = Buffer.from(base64Content, "base64");
-
-      let ext = "png";
-      if (subType === "jpeg" || subType === "jpg") ext = "jpg";
-      else if (subType === "webp") ext = "webp";
-      else if (subType === "svg+xml" || subType === "svg") ext = "svg";
-      else if (subType === "gif") ext = "gif";
-
       const basePrefix = filename
-        ? String(filename).replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase().slice(0, 30)
+        ? path.basename(String(filename)).replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase().slice(0, 30) || "ev-model"
         : "ev-model";
-      const uniqueFilename = `${basePrefix}-${Date.now()}.${ext}`;
+      const uniqueFilename = `${basePrefix}-${Date.now()}.${validation.ext}`;
       const destPath = path.join(publicUploadsDir, uniqueFilename);
 
-      fs.writeFileSync(destPath, buffer);
+      fs.writeFileSync(destPath, validation.buffer);
       console.log(`[Catalog] Uploaded and saved image to ${destPath}`);
 
       const publicUrl = `/uploads/${uniqueFilename}`;
@@ -1141,7 +1608,7 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 2. Admin save full catalog models list
-  app.post("/api/admin/catalog/save", (req, res) => {
+  app.post("/api/admin/catalog/save", requireAdminAuth, (req, res) => {
     const { models } = req.body;
     if (!Array.isArray(models)) {
       return res.status(400).json({ error: "models must be an array" });
@@ -1157,7 +1624,7 @@ Timestamp: ${new Date().toLocaleString()}`,
   });
 
   // 3. Admin reset catalog to baseline
-  app.post("/api/admin/catalog/reset", (req, res) => {
+  app.post("/api/admin/catalog/reset", requireAdminAuth, (req, res) => {
     liveCatalog = [...EV_MODELS];
     try {
       if (fs.existsSync(catalogFile)) {
@@ -1180,18 +1647,143 @@ Timestamp: ${new Date().toLocaleString()}`,
     }
   });
 
+  // SEO: Dynamic robots.txt
+  app.get("/robots.txt", (req, res) => {
+    const origin = getRequestOrigin(req);
+    const robotsTxt = [
+      "User-agent: *",
+      "Allow: /",
+      "Disallow: /admin",
+      "Disallow: /user-dashboard",
+      "Disallow: /api/",
+      "",
+      `Sitemap: ${origin}/sitemap.xml`,
+    ].join("\n");
+    res.type("text/plain").send(robotsTxt);
+  });
+
+  // SEO: Dynamic sitemap.xml covering tools, guides, 40+ blogs & 150+ EV models
+  app.get("/sitemap.xml", (req, res) => {
+    const origin = getRequestOrigin(req);
+    const today = new Date().toISOString().split("T")[0];
+
+    const publicTabKeys: SeoTabKey[] = [
+      "home",
+      "products",
+      "comparison",
+      "savings",
+      "range",
+      "charging",
+      "solar",
+      "battery",
+      "rider",
+      "charging-stations",
+      "blogs",
+      "content",
+      "about",
+      "contact",
+    ];
+
+    const urlEntries: { loc: string; changefreq: string; priority: string }[] = [];
+
+    for (const key of publicTabKeys) {
+      const cfg = STATIC_ROUTE_SEO[key];
+      const priority =
+        key === "home"
+          ? "1.0"
+          : ["products", "savings", "range", "charging", "solar", "blogs"].includes(key)
+          ? "0.9"
+          : "0.8";
+      urlEntries.push({
+        loc: `${origin}${cfg.canonicalPath}`,
+        changefreq: key === "home" || key === "products" || key === "blogs" ? "weekly" : "monthly",
+        priority,
+      });
+    }
+
+    for (const model of liveCatalog) {
+      urlEntries.push({
+        loc: `${origin}/ev/${encodeURIComponent(model.id)}`,
+        changefreq: "monthly",
+        priority: "0.75",
+      });
+    }
+
+    for (const post of ALL_BLOG_POSTS) {
+      urlEntries.push({
+        loc: `${origin}/blogs/${encodeURIComponent(post.id)}`,
+        changefreq: "monthly",
+        priority: "0.75",
+      });
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries
+  .map(
+    (entry) => `  <url>
+    <loc>${escapeXml(entry.loc)}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${entry.changefreq}</changefreq>
+    <priority>${entry.priority}</priority>
+  </url>`
+  )
+  .join("\n")}
+</urlset>`;
+
+    res.type("application/xml").send(xml);
+  });
+
   // Vite development middleware or production static handling
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
+
+    // Inject dynamic route-level SEO tags for HTML navigation requests in dev
+    app.use(async (req, res, next) => {
+      const isHtmlNav =
+        req.method === "GET" &&
+        !req.path.includes(".") &&
+        !req.path.startsWith("/api") &&
+        !req.path.startsWith("/@") &&
+        !req.path.startsWith("/src") &&
+        !req.path.startsWith("/node_modules") &&
+        (req.headers.accept || "").includes("text/html");
+
+      if (!isHtmlNav) {
+        return next();
+      }
+
+      try {
+        const indexPath = path.resolve(process.cwd(), "index.html");
+        const rawHtml = fs.readFileSync(indexPath, "utf-8");
+        const transformed = await vite.transformIndexHtml(req.originalUrl, rawHtml);
+        const origin = getRequestOrigin(req);
+        const resolvedSeo = resolveSeoForPath(req.path, req.url.split("?")[1] || "", origin, liveCatalog, ALL_BLOG_POSTS);
+        const htmlWithSeo = injectSeoIntoHtml(transformed, resolvedSeo);
+        return res.status(200).set({ "Content-Type": "text/html" }).end(htmlWithSeo);
+      } catch (err) {
+        return next(err);
+      }
+    });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      const indexPath = path.join(distPath, "index.html");
+      try {
+        const rawHtml = fs.readFileSync(indexPath, "utf-8");
+        const origin = getRequestOrigin(req);
+        const resolvedSeo = resolveSeoForPath(req.path, req.url.split("?")[1] || "", origin, liveCatalog, ALL_BLOG_POSTS);
+        const htmlWithSeo = injectSeoIntoHtml(rawHtml, resolvedSeo);
+        res.status(200).set({ "Content-Type": "text/html" }).send(htmlWithSeo);
+      } catch {
+        res.sendFile(indexPath);
+      }
     });
   }
 

@@ -18,12 +18,11 @@ import {
   FileText, 
   Info,
   Mail,
-  Lock,
   User
 } from 'lucide-react';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useCatalog } from '../context/CatalogContext';
-import { PWAInstallButton } from './PWAInstallButton';
+import { GlobalSearchBar } from './GlobalSearchBar';
 
 export type TabType = 
   | 'home'
@@ -46,9 +45,16 @@ export type TabType =
 interface NavbarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
+  onSelectModelFromSearch?: (modelId: string, tool?: TabType) => void;
+  onSearchCatalog?: (query: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  setActiveTab,
+  onSelectModelFromSearch,
+  onSearchCatalog,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { totalCount } = useCatalog();
@@ -167,7 +173,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'blogs', label: 'Blogs & Insights', shortLabel: 'Blogs', icon: <FileText className="w-4 h-4 text-cyan-400" />, badge: '40+' },
     { id: 'about', label: 'About Us', shortLabel: 'About', icon: <Info className="w-4 h-4 text-slate-300" /> },
     { id: 'contact', label: 'Contact Us', shortLabel: 'Contact', icon: <Mail className="w-4 h-4 text-[#16A36A]" /> },
-    { id: 'admin', label: 'Admin Portal', shortLabel: 'Admin', icon: <Lock className="w-4 h-4 text-[#F0B429]" />, badge: 'CSV' },
   ];
 
   const mobileBarItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
@@ -177,7 +182,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'content', label: 'Guides', icon: <BookOpen className="w-3.5 h-3.5 text-emerald-300" /> },
     { id: 'blogs', label: 'Blogs', icon: <FileText className="w-3.5 h-3.5 text-cyan-300" />, badge: '40+' },
     { id: 'about', label: 'About', icon: <Info className="w-3.5 h-3.5 text-slate-300" /> },
-    { id: 'admin', label: 'Admin', icon: <Lock className="w-3.5 h-3.5 text-[#F0B429]" />, badge: 'CSV' },
   ];
 
   const firstMenuItems: { 
@@ -193,7 +197,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'blogs', label: 'Blogs & Insights', desc: '40+ in-depth EV technology, repair & tariff articles', icon: <FileText className="w-4 h-4 text-cyan-400" />, badge: '40+' },
     { id: 'about', label: 'About Us & Creator', desc: 'Hamdan Mirza & OrinexAI partnership details', icon: <Info className="w-4 h-4 text-slate-300" /> },
     { id: 'contact', label: 'Contact Us', desc: 'Direct WhatsApp (+92 303 6001701) & inquiry form', icon: <Mail className="w-4 h-4 text-[#16A36A]" /> },
-    { id: 'admin', label: 'Admin Portal', desc: 'CSV Product Fleet Manager, Users & Payment settings', icon: <Lock className="w-4 h-4 text-[#F0B429]" />, badge: 'CSV / Pin' },
   ];
 
   const calculatorItems: { 
@@ -224,19 +227,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
       <button
         key={item.id}
         onClick={() => handleTabClick(item.id)}
-        className={`group relative flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-extrabold transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap border ${
+        className={`group relative flex items-center gap-1.5 px-2 xl:px-2.5 2xl:px-3 py-1.5 xl:py-2 rounded-xl text-xs 2xl:text-sm font-extrabold transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap border ${
           isActive
             ? 'bg-[#16A36A] text-white border-[#16A36A] shadow-sm'
             : 'bg-white text-[#071B2B] hover:text-[#16A36A] hover:bg-slate-100 border-[#071B2B]/25 shadow-2xs'
         }`}
         title={item.label}
       >
-        <div className={`transition-transform duration-200 shrink-0 ${
-          isActive ? 'text-white scale-105' : 'text-[#16A36A] group-hover:scale-105'
-        }`}>
-          {item.icon}
-        </div>
-
         <span className="tracking-tight whitespace-nowrap">
           <span className="hidden xl:inline">{item.label}</span>
           <span className="xl:hidden">{item.shortLabel}</span>
@@ -254,14 +251,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F5F8F6] text-[#071B2B] border-b border-slate-300/90 shadow-xs transition-all duration-300 w-full max-w-full overflow-x-clip">
+    <header className="sticky top-0 z-50 bg-[#F5F8F6] text-[#071B2B] border-b border-slate-300/90 shadow-xs transition-all duration-300 w-full max-w-full">
       
       {/* ROW 1: DESKTOP & MOBILE MAIN NAV HEADER */}
-      <div className={`bg-[#F5F8F6] relative px-3 sm:px-5 lg:px-6 xl:px-8 ${isScrolled ? 'py-1.5 sm:py-2' : 'py-2.5 sm:py-3'} transition-all w-full max-w-full overflow-x-clip border-b border-slate-300/80`}>
+      <div className={`bg-[#F5F8F6] relative z-40 px-3 sm:px-5 lg:px-6 xl:px-8 ${isScrolled ? 'py-1.5 sm:py-2' : 'py-2.5 sm:py-3'} transition-all w-full max-w-full border-b border-slate-300/80`}>
         <div className="max-w-7xl mx-auto w-full">
           
           {/* Desktop Layout (lg: 1024px+) */}
-          <div className="hidden lg:flex items-center justify-between gap-2 xl:gap-3.5 w-full min-h-[44px]">
+          <div className="hidden lg:flex items-center justify-between gap-2 xl:gap-3 w-full min-h-[44px]">
             {/* Left: Brand Logo */}
             <div className="flex items-center shrink-0">
               <button 
@@ -269,19 +266,25 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                 className="flex items-center group cursor-pointer focus:outline-none select-none transition-transform active:scale-95 py-0.5"
                 title="goinfoEV - Return to Home"
               >
-                <span className="font-extrabold text-2xl xl:text-3xl tracking-tight text-[#071B2B] whitespace-nowrap">
+                <span className="font-extrabold text-xl xl:text-2xl 2xl:text-3xl tracking-tight text-[#071B2B] whitespace-nowrap">
                   goinfo<span className="text-[#16A36A] font-black">EV</span>
                 </span>
               </button>
             </div>
 
             {/* Center: Main Navigation Links */}
-            <nav className="flex items-center justify-center gap-1.5 xl:gap-2 flex-nowrap">
+            <nav className="flex items-center justify-center gap-1 xl:gap-1.5 flex-nowrap">
               {desktopNavItems.map((item) => renderDesktopNavButton(item))}
             </nav>
 
-            {/* Right: User Dashboard & VIP Subscription CTA */}
+            {/* Right: Global Search, User Dashboard & VIP Subscription CTA */}
             <div className="flex items-center gap-1.5 xl:gap-2 shrink-0">
+              <GlobalSearchBar
+                variant="desktop"
+                onNavigate={handleTabClick}
+                onSelectModel={onSelectModelFromSearch}
+                onSearchCatalog={onSearchCatalog}
+              />
               {user ? (
                 <button
                   onClick={() => handleTabClick('user-dashboard')}
@@ -334,7 +337,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
                   )}
                 </span>
               </button>
-              <PWAInstallButton />
             </div>
           </div>
 
@@ -383,6 +385,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           </div>
 
         </div>
+      </div>
+
+      {/* MOBILE GLOBAL SEARCH BAR STRIP */}
+      <div className="lg:hidden bg-[#F5F8F6] border-b border-slate-300/80 px-3 py-2 relative z-30">
+        <GlobalSearchBar
+          variant="mobile"
+          onNavigate={handleTabClick}
+          onSelectModel={onSelectModelFromSearch}
+          onSearchCatalog={onSearchCatalog}
+        />
       </div>
 
       {/* MOBILE QUICK MENU STRIP (Non-home pages) */}

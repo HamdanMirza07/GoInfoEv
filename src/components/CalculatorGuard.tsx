@@ -220,16 +220,6 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
               <CreditCard className="w-4 h-4" />
               <span>{user ? 'Choose Subscription Plan' : 'Sign In / Register with Phone'}</span>
             </button>
-
-            {/* Demo Reset button for convenient testing */}
-            <button
-              onClick={resetFreeUsesForDemo}
-              className="w-full sm:w-auto px-4 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-              title="Reset free trial counter back to 0 for demo purposes"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset 7 Free Uses (Demo)</span>
-            </button>
           </div>
         </div>
       ) : (

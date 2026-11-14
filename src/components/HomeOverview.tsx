@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EV_MODELS, EVModel, formatPKR, getFullName } from '../data/evModels';
 import { TabType } from './Navbar';
 import { useSubscription } from '../context/SubscriptionContext';
+import { HOME_FAQS } from '../seo/seoConfig';
 import { 
   AnimatedBatteryCellSvg, 
   AnimatedMotorHubSvg, 
@@ -371,7 +372,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
                   {m.image && !m.image.includes('.jpg') ? (
                     <img
                       src={m.image}
-                      alt={getFullName(m)}
+                      alt={`${getFullName(m)} electric bike & scooter specs`}
                       className="max-h-[200px] sm:max-h-[400px] w-auto object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-105"
                     />
                   ) : (
@@ -420,7 +421,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
 
           {/* Subtitle Description */}
           <p className="text-[#071B2B] sm:text-slate-600 text-sm sm:text-base max-w-xl leading-relaxed font-medium sm:font-normal">
-            Experience the next generation of electric performance in Pakistan. Zero emissions. Infinite possibilities. Engineered for those who demand more.
+            Precision EV calculators, real-world range analytics, and verified electric two-wheeler specs built for Pakistan and global EV riders. Zero emissions. Infinite savings.
           </p>
 
           {/* Action Buttons */}
@@ -1164,6 +1165,79 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({ onNavigate, onSelect
           </div>
         )}
 
+      </section>
+
+      {/* 4. SEO KNOWLEDGE & FREQUENTLY ASKED QUESTIONS (PAKISTAN + GLOBAL) */}
+      <section className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-xs space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-5">
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#16A36A]">
+              Pakistan &amp; Global EV Knowledgebase
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#071B2B] tracking-tight">
+              Electric Vehicle Buying, Charging &amp; Savings FAQs
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
+              Data-backed answers on EV vs petrol savings, kWh charging tariffs, LFP vs graphene battery lifespan, and solar EV charging.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => onNavigate('blogs')}
+              className="px-4 py-2 rounded-xl bg-[#F5F8F6] hover:bg-slate-100 text-[#071B2B] border border-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Read 40+ EV Guides
+            </button>
+            <button
+              onClick={() => onNavigate('savings')}
+              className="px-4 py-2 rounded-xl bg-[#16A36A] hover:bg-[#138a59] text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              Open Savings Calculator
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {HOME_FAQS.map((faq, idx) => (
+            <article
+              key={idx}
+              className="p-5 rounded-2xl bg-[#F5F8F6]/70 border border-slate-200/80 space-y-2"
+            >
+              <h3 className="text-sm sm:text-base font-extrabold text-[#071B2B] leading-snug">
+                {faq.q}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {faq.a}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <nav aria-label="Popular EV SEO Tools" className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold text-slate-500 mr-1">Explore Tools:</span>
+          {[
+            { id: 'products' as TabType, label: 'EV Fleet Catalog', href: '/products' },
+            { id: 'savings' as TabType, label: 'EV vs Petrol Savings', href: '/savings' },
+            { id: 'range' as TabType, label: 'Range Estimator', href: '/range' },
+            { id: 'charging' as TabType, label: 'kWh Charging Cost', href: '/charging' },
+            { id: 'solar' as TabType, label: 'Solar EV Sizing', href: '/solar' },
+            { id: 'battery' as TabType, label: 'Battery SOH Health', href: '/battery' },
+            { id: 'rider' as TabType, label: 'Rider Profit ROI', href: '/rider' },
+            { id: 'comparison' as TabType, label: 'Compare EV Bikes', href: '/comparison' },
+          ].map((link) => (
+            <a
+              key={link.id}
+              href={link.href}
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigate(link.id);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-[#16A36A]/10 text-[#071B2B] hover:text-[#16A36A] border border-slate-200 font-semibold transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
       </section>
 
     </div>

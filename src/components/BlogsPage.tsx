@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   BookOpen, 
   Search, 
@@ -59,12 +59,18 @@ export interface BlogPost {
 
 interface BlogsPageProps {
   onNavigate: (tab: TabType) => void;
+  initialArticleId?: string | null;
+  onArticleChange?: (article: BlogPost | null) => void;
 }
 
-export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
+export const BlogsPage: React.FC<BlogsPageProps> = ({
+  onNavigate,
+  initialArticleId = null,
+  onArticleChange,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(initialArticleId);
   const [copiedLink, setCopiedLink] = useState(false);
   const [readerFontSize, setReaderFontSize] = useState<'normal' | 'large'>('normal');
 
@@ -254,6 +260,36 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
     if (!orig) return null;
     return getTranslatedPost(orig, selectedLanguage);
   }, [activeArticleId, articles, selectedLanguage]);
+
+  useEffect(() => {
+    setActiveArticleId(initialArticleId || null);
+  }, [initialArticleId]);
+
+  useEffect(() => {
+    if (!activeArticleId) {
+      onArticleChange?.(null);
+      return;
+    }
+    const orig = articles.find((a) => a.id === activeArticleId) || null;
+    onArticleChange?.(orig);
+  }, [activeArticleId, articles, onArticleChange]);
+
+  const openArticle = (articleId: string) => {
+    setActiveArticleId(articleId);
+    if (typeof window !== 'undefined') {
+      const targetUrl = `/blogs/${encodeURIComponent(articleId)}`;
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ tab: 'blogs', articleId }, '', targetUrl);
+      }
+    }
+  };
+
+  const closeArticle = () => {
+    setActiveArticleId(null);
+    if (typeof window !== 'undefined' && window.location.pathname !== '/blogs') {
+      window.history.pushState({ tab: 'blogs' }, '', '/blogs');
+    }
+  };
 
   const handleShareArticle = (article: BlogPost) => {
     if (navigator.share) {
@@ -610,7 +646,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                   </div>
 
                   <h3 
-                    onClick={() => setActiveArticleId(article.id)}
+                    onClick={() => openArticle(article.id)}
                     className={`font-black text-slate-900 group-hover:text-blue-600 transition-colors cursor-pointer ${
                       isUrdu ? 'font-urdu text-xl leading-[1.8] text-right font-bold' : 'text-lg leading-snug'
                     }`}
@@ -629,7 +665,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                   <span className="text-slate-400 text-[11px] font-medium">{article.date}</span>
                   
                   <button
-                    onClick={() => setActiveArticleId(article.id)}
+                    onClick={() => openArticle(article.id)}
                     className={`inline-flex items-center gap-1.5 font-bold text-blue-600 group-hover:text-blue-700 cursor-pointer ${isUrdu ? 'font-urdu text-sm' : ''}`}
                   >
                     <span>{ui.readArticle}</span>
@@ -708,7 +744,7 @@ export const BlogsPage: React.FC<BlogsPageProps> = ({ onNavigate }) => {
                   <Share2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setActiveArticleId(null)}
+                  onClick={closeArticle}
                   className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors cursor-pointer"
                   title={ui.closeBtn}
                 >

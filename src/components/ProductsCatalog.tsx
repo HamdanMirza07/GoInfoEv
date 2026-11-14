@@ -7,6 +7,10 @@ import { AnimatedEVBikeSvg } from './EVSvgIllustrations';
 
 interface ProductsCatalogProps {
   onSelectModelForTool?: (modelId: string, tool: TabType) => void;
+  initialModelId?: string;
+  initialSearchQuery?: string;
+  requestNonce?: number;
+  onModelModalChange?: (model: EVModel | null) => void;
 }
 
 // Helper to parse numerical motor wattage
@@ -16,9 +20,15 @@ function getMotorWattage(motorStr: string): number {
   return match ? parseInt(match[1], 10) : 0;
 }
 
-export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelForTool }) => {
+export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({
+  onSelectModelForTool,
+  initialModelId,
+  initialSearchQuery,
+  requestNonce,
+  onModelModalChange,
+}) => {
   const { models: activeModels } = useCatalog();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchQuery || '');
   const [brandFilter, setBrandFilter] = useState('all');
   const [batteryTypeFilter, setBatteryTypeFilter] = useState('all');
   const [motorPowerFilter, setMotorPowerFilter] = useState('all');
@@ -100,6 +110,52 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, brandFilter, batteryTypeFilter, motorPowerFilter, rangeFilter, priceFilter]);
+
+  const openModelModal = (model: EVModel) => {
+    setSelectedModelModal(model);
+    onModelModalChange?.(model);
+    if (typeof window !== 'undefined') {
+      const targetUrl = `/ev/${encodeURIComponent(model.id)}`;
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ tab: 'products', modelId: model.id }, '', targetUrl);
+      }
+    }
+  };
+
+  const closeModelModal = () => {
+    setSelectedModelModal(null);
+    onModelModalChange?.(null);
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ev/')) {
+      window.history.pushState({ tab: 'products' }, '', '/products');
+    }
+  };
+
+  useEffect(() => {
+    if (!requestNonce) return;
+    if (initialModelId) {
+      const target = activeModels.find((m) => m.id === initialModelId);
+      if (target) {
+        setBrandFilter('all');
+        setBatteryTypeFilter('all');
+        setMotorPowerFilter('all');
+        setRangeFilter('all');
+        setPriceFilter('all');
+        setSearchTerm(target.model);
+        setSelectedModelModal(target);
+        onModelModalChange?.(target);
+      }
+    } else if (typeof initialSearchQuery === 'string') {
+      setBrandFilter('all');
+      setBatteryTypeFilter('all');
+      setMotorPowerFilter('all');
+      setRangeFilter('all');
+      setPriceFilter('all');
+      setSelectedModelModal(null);
+      onModelModalChange?.(null);
+      setSearchTerm(initialSearchQuery);
+      setItemsPerPage(12);
+    }
+  }, [requestNonce, initialModelId, initialSearchQuery, activeModels]);
 
   const totalFiltered = filtered.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / itemsPerPage));
@@ -297,7 +353,7 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
                 {model.image ? (
                   <img
                     src={model.image}
-                    alt={getFullName(model)}
+                    alt={`${getFullName(model)} electric bike specs and price`}
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 filter drop-shadow-xs"
                     loading="lazy"
                     onError={(e) => {
@@ -387,8 +443,8 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
 
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => setSelectedModelModal(model)}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors"
+                  onClick={() => openModelModal(model)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                 >
                   Full Specs
                 </button>
@@ -540,8 +596,9 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
                 </h2>
               </div>
               <button
-                onClick={() => setSelectedModelModal(null)}
-                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold"
+                onClick={closeModelModal}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 font-bold cursor-pointer"
+                aria-label="Close specifications"
               >
                 ✕
               </button>
@@ -739,18 +796,18 @@ export const ProductsCatalog: React.FC<ProductsCatalogProps> = ({ onSelectModelF
 
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => setSelectedModelModal(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl"
+                onClick={closeModelModal}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl cursor-pointer"
               >
                 Close
               </button>
               <button
                 onClick={() => {
                   const id = selectedModelModal.id;
-                  setSelectedModelModal(null);
+                  closeModelModal();
                   if (onSelectModelForTool) onSelectModelForTool(id, 'range');
                 }}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl"
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl cursor-pointer"
               >
                 Launch in Range Estimator
               </button>

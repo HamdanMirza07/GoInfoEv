@@ -12,7 +12,8 @@ import {
   BatteryCharging, 
   TrendingUp,
   Globe,
-  Mail
+  Mail,
+  Lock
 } from 'lucide-react';
 
 interface FooterProps {
@@ -164,6 +165,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               >
                 Compare Fleet
               </button>
+              <button
+                onClick={() => handleNavClick('admin')}
+                className="flex items-center justify-between w-full text-slate-700 hover:text-[#16A36A] transition-colors cursor-pointer text-left font-semibold whitespace-nowrap pt-1.5 border-t border-slate-200/70"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-[#16A36A]" />
+                  <span>Admin Portal</span>
+                </span>
+                <span className="text-[9px] px-1.5 py-0.2 bg-white text-[#071B2B] border border-slate-200 rounded-full font-black shadow-2xs">CSV</span>
+              </button>
             </div>
           </div>
 
@@ -256,12 +267,21 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
             <span>© 2026 <strong className="text-[#071B2B]">goinfoEV</strong>. All rights reserved.</span>
             <span className="hidden sm:inline text-slate-300">•</span>
-            <span>Pakistan EV Intelligence Suite</span>
+            <span>Pakistan &amp; Global EV Intelligence Suite</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <a
+              href="/sitemap.xml"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-600 hover:text-[#16A36A] font-semibold transition-colors"
+            >
+              XML Sitemap
+            </a>
           </div>
 
           <div className="flex items-center gap-4">
             <span className="text-[11px] text-slate-600 flex items-center gap-1 font-medium">
-              Made in Pakistan 🇵🇰 for Sustainable Mobility
+              Built in Pakistan 🇵🇰 for Global Sustainable Mobility
             </span>
             
             <button
