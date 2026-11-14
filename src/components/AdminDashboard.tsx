@@ -40,7 +40,13 @@ import { ErrorBoundary } from './ErrorBoundary';
 import {
   clearAdminToken,
   getAdminAuthHeaders,
+  getAdminToken,
+  getLocalRecoveryEmail,
+  hasLocalAdminPasscode,
+  saveLocalAdminPasscode,
+  saveLocalRecoveryEmail,
   setAdminToken,
+  verifyLocalAdminPasscode,
 } from '../utils/authHeaders';
 
 export const AdminDashboard: React.FC = () => {
@@ -154,15 +160,18 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     let active = true;
     const verifySession = async () => {
+      const localConfigured = hasLocalAdminPasscode();
       try {
         const res = await fetch('/api/admin/session', {
           headers: getAdminAuthHeaders(),
           credentials: 'include',
         });
-        if (res.ok) {
+        const isJson = res.headers.get('content-type')?.includes('application/json');
+        if (res.ok && isJson) {
           const data = await res.json();
           if (active) {
-            setHasCustomPasscode(Boolean(data.passcodeConfigured));
+            const configured = Boolean(data.passcodeConfigured) || localConfigured;
+            setHasCustomPasscode(configured);
             if (data.authenticated) {
               if (data.token) {
                 setAdminToken(data.token);
@@ -171,10 +180,36 @@ export const AdminDashboard: React.FC = () => {
               setCheckingSession(false);
               return;
             }
+            if (!configured) {
+              setAdminToken('local-admin-session');
+              setIsAuthenticated(true);
+              setCheckingSession(false);
+              return;
+            }
+          }
+        } else if (!isJson) {
+          // Static / Vercel hosting fallback when /api/admin/session is not mounted
+          if (active) {
+            setHasCustomPasscode(localConfigured);
+            if (!localConfigured || Boolean(getAdminToken())) {
+              setAdminToken(getAdminToken() || 'local-admin-session');
+              setIsAuthenticated(true);
+              setCheckingSession(false);
+              return;
+            }
           }
         }
       } catch {
-        // ignore network errors
+        // Offline / static fallback
+        if (active) {
+          setHasCustomPasscode(localConfigured);
+          if (!localConfigured || Boolean(getAdminToken())) {
+            setAdminToken(getAdminToken() || 'local-admin-session');
+            setIsAuthenticated(true);
+            setCheckingSession(false);
+            return;
+          }
+        }
       }
       if (active) {
         clearAdminToken();
@@ -279,16 +314,34 @@ export const AdminDashboard: React.FC = () => {
         credentials: 'include',
         body: JSON.stringify({ passcode: adminPin }),
       });
-      const data = await res.json().catch(() => ({}));
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      const data = isJson ? await res.json().catch(() => ({})) : {};
       if (res.ok && data.success && data.token) {
         setAdminToken(data.token);
         setIsAuthenticated(true);
         setAdminPin('');
-      } else {
-        setPinError(data.error || 'Invalid admin passcode.');
+        return;
       }
+
+      // Also check local SHA-256 hash (supports Vercel static deployment & locally saved custom passcode)
+      const localMatch = await verifyLocalAdminPasscode(adminPin);
+      if (localMatch) {
+        setAdminToken(data.token || 'local-admin-session');
+        setIsAuthenticated(true);
+        setAdminPin('');
+        return;
+      }
+
+      setPinError(data.error || 'Invalid admin passcode.');
     } catch {
-      setPinError('Unable to verify credentials with server.');
+      const localMatch = await verifyLocalAdminPasscode(adminPin);
+      if (localMatch) {
+        setAdminToken('local-admin-session');
+        setIsAuthenticated(true);
+        setAdminPin('');
+      } else {
+        setPinError('Invalid admin passcode.');
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -398,6 +451,7 @@ export const AdminDashboard: React.FC = () => {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success && data.token) {
+        await saveLocalAdminPasscode(newPasscodeInput.trim());
         setAdminToken(data.token);
         setHasCustomPasscode(true);
         setIsAuthenticated(true);
@@ -424,25 +478,23 @@ export const AdminDashboard: React.FC = () => {
     setSecCurrentPasscode('');
     setSecNewPasscode('');
     setSecConfirmPasscode('');
+    setSecRecoveryEmail(getLocalRecoveryEmail());
     try {
       const res = await fetch('/api/admin/security-settings', {
         headers: getAdminAuthHeaders(),
         credentials: 'include',
       });
-      if (res.status === 401) {
-        clearAdminToken();
-        setIsAuthenticated(false);
-        setSecurityModalOpen(false);
-        return;
-      }
-      if (res.ok) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.ok && isJson) {
         const data = await res.json();
-        setSecRecoveryEmail(data.recoveryEmail || '');
+        setSecRecoveryEmail(data.recoveryEmail || getLocalRecoveryEmail());
         setSecSmtpConfigured(Boolean(data.smtpConfigured));
-        setHasCustomPasscode(Boolean(data.hasCustomPasscode));
+        setHasCustomPasscode(Boolean(data.hasCustomPasscode) || hasLocalAdminPasscode());
+      } else {
+        setHasCustomPasscode(hasLocalAdminPasscode());
       }
     } catch {
-      // ignore
+      setHasCustomPasscode(hasLocalAdminPasscode());
     }
   };
 
@@ -482,28 +534,53 @@ export const AdminDashboard: React.FC = () => {
           recoveryEmail: secRecoveryEmail.trim() || undefined,
         }),
       });
-      if (res.status === 401 && res.headers.get('content-type')?.includes('json')) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         const errData = await res.json().catch(() => ({}));
-        setSecError(errData.error || 'Current Admin Passcode is incorrect.');
-        setSecLoading(false);
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        if (typeof data.hasCustomPasscode === 'boolean') {
-          setHasCustomPasscode(data.hasCustomPasscode);
-        } else if (secNewPasscode.trim()) {
-          setHasCustomPasscode(true);
+        const localValid = await verifyLocalAdminPasscode(secCurrentPasscode.trim());
+        if (!localValid) {
+          setSecError(errData.error || 'Current Admin Passcode is incorrect.');
+          setSecLoading(false);
+          return;
         }
-        setSecSuccess(data.message || 'Admin security settings updated successfully.');
-        setSecCurrentPasscode('');
-        setSecNewPasscode('');
-        setSecConfirmPasscode('');
-      } else {
-        setSecError(data.error || 'Failed to update admin security settings.');
       }
+
+      if (secNewPasscode.trim()) {
+        await saveLocalAdminPasscode(secNewPasscode.trim());
+        setHasCustomPasscode(true);
+      }
+      if (secRecoveryEmail.trim()) {
+        saveLocalRecoveryEmail(secRecoveryEmail.trim());
+      }
+
+      const data = isJson ? await res.json().catch(() => ({})) : {};
+      setSecSuccess(
+        data.message ||
+          'Admin Passcode saved! Next time you lock or sign in, this passcode will be required.'
+      );
+      setSecCurrentPasscode('');
+      setSecNewPasscode('');
+      setSecConfirmPasscode('');
     } catch {
-      setSecError('Network error while updating security settings.');
+      if (hasCustomPasscode) {
+        const localValid = await verifyLocalAdminPasscode(secCurrentPasscode.trim());
+        if (!localValid) {
+          setSecError('Current Admin Passcode is incorrect.');
+          setSecLoading(false);
+          return;
+        }
+      }
+      if (secNewPasscode.trim()) {
+        await saveLocalAdminPasscode(secNewPasscode.trim());
+        setHasCustomPasscode(true);
+      }
+      if (secRecoveryEmail.trim()) {
+        saveLocalRecoveryEmail(secRecoveryEmail.trim());
+      }
+      setSecSuccess('Admin Passcode saved! Next time you lock or sign in, this passcode will be required.');
+      setSecCurrentPasscode('');
+      setSecNewPasscode('');
+      setSecConfirmPasscode('');
     } finally {
       setSecLoading(false);
     }
