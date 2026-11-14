@@ -247,9 +247,29 @@ async function startServer() {
   });
 
   app.get("/api/admin/session", (req, res) => {
+    const passcodeConfigured = hasStoredAdminPasscode();
     const token = extractAuthToken(req, ADMIN_COOKIE_NAME);
     const verified = verifyAuthToken(token);
-    res.json({ authenticated: Boolean(verified && verified.role === "admin") });
+
+    if (verified && verified.role === "admin") {
+      return res.json({ authenticated: true, passcodeConfigured });
+    }
+
+    // First-time access: if admin has not selected a passcode inside the portal yet, auto-issue session
+    if (!passcodeConfigured) {
+      const maxAgeMs = 12 * 60 * 60 * 1000;
+      const expiresAt = Date.now() + maxAgeMs;
+      const newToken = signAuthToken({ role: "admin", sub: "admin", exp: expiresAt });
+      setAuthCookie(res, req, ADMIN_COOKIE_NAME, newToken, maxAgeMs);
+      return res.json({
+        authenticated: true,
+        token: newToken,
+        expiresAt,
+        passcodeConfigured: false,
+      });
+    }
+
+    res.json({ authenticated: false, passcodeConfigured: true });
   });
 
   app.post("/api/admin/logout", (req, res) => {
@@ -409,9 +429,9 @@ If you did not request this reset, ignore this email — your Admin Passcode has
     const code = typeof req.body?.code === "string" ? req.body.code : "";
     const newPasscode = typeof req.body?.newPasscode === "string" ? req.body.newPasscode.trim() : "";
 
-    if (newPasscode.length < 6 || newPasscode.length > 128) {
+    if (newPasscode.length < 4 || newPasscode.length > 128) {
       return res.status(400).json({
-        error: "New Admin Passcode must be at least 6 characters long.",
+        error: "New Admin Passcode must be at least 4 characters long.",
       });
     }
 
@@ -445,7 +465,7 @@ If you did not request this reset, ignore this email — your Admin Passcode has
     res.json({
       recoveryEmail: getAdminRecoveryEmail(),
       smtpConfigured: mailConfig.configured,
-      hasCustomPasscode: hasStoredAdminPasscode() || Boolean(process.env.ADMIN_PASSCODE?.trim()),
+      hasCustomPasscode: hasStoredAdminPasscode(),
     });
   });
 
@@ -454,7 +474,8 @@ If you did not request this reset, ignore this email — your Admin Passcode has
     const newPasscode = typeof req.body?.newPasscode === "string" ? req.body.newPasscode.trim() : "";
     const recoveryEmail = typeof req.body?.recoveryEmail === "string" ? req.body.recoveryEmail.trim() : "";
 
-    if (!verifyAdminPasscode(currentPasscode)) {
+    // Only require currentPasscode if a custom passcode was already set previously
+    if (hasStoredAdminPasscode() && !verifyAdminPasscode(currentPasscode)) {
       return res.status(401).json({ error: "Current Admin Passcode is incorrect." });
     }
 
@@ -469,8 +490,9 @@ If you did not request this reset, ignore this email — your Admin Passcode has
       return res.json({
         success: true,
         recoveryEmail: savedEmail,
+        hasCustomPasscode: hasStoredAdminPasscode(),
         message: newPasscode
-          ? "Admin Passcode and recovery settings updated successfully."
+          ? "Admin Passcode saved! Next time you lock or sign in, this passcode will be required."
           : "Admin recovery email updated successfully.",
       });
     } catch (err: any) {

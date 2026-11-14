@@ -72,8 +72,8 @@ export function verifyAdminPasscode(input: string): boolean {
 
 export function updateAdminPasscode(newPasscode: string): void {
   const trimmed = newPasscode.trim();
-  if (trimmed.length < 6 || trimmed.length > 128) {
-    throw new Error("Admin passcode must be between 6 and 128 characters.");
+  if (trimmed.length < 4 || trimmed.length > 128) {
+    throw new Error("Admin passcode must be between 4 and 128 characters.");
   }
   const store = readAdminAuthStore();
   store.passcodeHash = hashPassword(trimmed);

@@ -70,6 +70,7 @@ export const AdminDashboard: React.FC = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Authenticated Admin Security Modal states
+  const [hasCustomPasscode, setHasCustomPasscode] = useState(false);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
   const [secCurrentPasscode, setSecCurrentPasscode] = useState('');
   const [secNewPasscode, setSecNewPasscode] = useState('');
@@ -160,10 +161,16 @@ export const AdminDashboard: React.FC = () => {
         });
         if (res.ok) {
           const data = await res.json();
-          if (active && data.authenticated) {
-            setIsAuthenticated(true);
-            setCheckingSession(false);
-            return;
+          if (active) {
+            setHasCustomPasscode(Boolean(data.passcodeConfigured));
+            if (data.authenticated) {
+              if (data.token) {
+                setAdminToken(data.token);
+              }
+              setIsAuthenticated(true);
+              setCheckingSession(false);
+              return;
+            }
           }
         }
       } catch {
@@ -369,8 +376,8 @@ export const AdminDashboard: React.FC = () => {
   const handleResetPasscodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setRecoveryError('');
-    if (newPasscodeInput.trim().length < 6) {
-      setRecoveryError('New passcode must be at least 6 characters long.');
+    if (newPasscodeInput.trim().length < 4) {
+      setRecoveryError('New passcode must be at least 4 characters long.');
       return;
     }
     if (newPasscodeInput.trim() !== confirmPasscodeInput.trim()) {
@@ -392,6 +399,7 @@ export const AdminDashboard: React.FC = () => {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success && data.token) {
         setAdminToken(data.token);
+        setHasCustomPasscode(true);
         setIsAuthenticated(true);
         setAuthView('login');
         setRecoveryOtp('');
@@ -409,9 +417,9 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const openSecurityModal = async () => {
+  const openSecurityModal = async (initialNotice?: string) => {
     setSecurityModalOpen(true);
-    setSecError('');
+    setSecError(initialNotice || '');
     setSecSuccess('');
     setSecCurrentPasscode('');
     setSecNewPasscode('');
@@ -431,6 +439,7 @@ export const AdminDashboard: React.FC = () => {
         const data = await res.json();
         setSecRecoveryEmail(data.recoveryEmail || '');
         setSecSmtpConfigured(Boolean(data.smtpConfigured));
+        setHasCustomPasscode(Boolean(data.hasCustomPasscode));
       }
     } catch {
       // ignore
@@ -442,13 +451,17 @@ export const AdminDashboard: React.FC = () => {
     setSecError('');
     setSecSuccess('');
 
-    if (!secCurrentPasscode.trim()) {
+    if (hasCustomPasscode && !secCurrentPasscode.trim()) {
       setSecError('Please enter your current Admin Passcode to save changes.');
       return;
     }
+    if (!hasCustomPasscode && !secNewPasscode.trim()) {
+      setSecError('Please enter a new Admin Password (at least 4 characters).');
+      return;
+    }
     if (secNewPasscode.trim()) {
-      if (secNewPasscode.trim().length < 6) {
-        setSecError('New Admin Passcode must be at least 6 characters long.');
+      if (secNewPasscode.trim().length < 4) {
+        setSecError('Admin Passcode must be at least 4 characters long.');
         return;
       }
       if (secNewPasscode.trim() !== secConfirmPasscode.trim()) {
@@ -464,7 +477,7 @@ export const AdminDashboard: React.FC = () => {
         headers: getAdminAuthHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'include',
         body: JSON.stringify({
-          currentPasscode: secCurrentPasscode.trim(),
+          currentPasscode: secCurrentPasscode.trim() || undefined,
           newPasscode: secNewPasscode.trim() || undefined,
           recoveryEmail: secRecoveryEmail.trim() || undefined,
         }),
@@ -477,6 +490,11 @@ export const AdminDashboard: React.FC = () => {
       }
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
+        if (typeof data.hasCustomPasscode === 'boolean') {
+          setHasCustomPasscode(data.hasCustomPasscode);
+        } else if (secNewPasscode.trim()) {
+          setHasCustomPasscode(true);
+        }
         setSecSuccess(data.message || 'Admin security settings updated successfully.');
         setSecCurrentPasscode('');
         setSecNewPasscode('');
@@ -492,6 +510,10 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    if (!hasCustomPasscode) {
+      openSecurityModal('Lock karne se pehle apna Admin Password select karein.');
+      return;
+    }
     try {
       await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
     } catch {
@@ -944,6 +966,32 @@ export const AdminDashboard: React.FC = () => {
   // ────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 pb-16">
+      {/* First-Time Password Selection Banner */}
+      {!hasCustomPasscode && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+              <KeyRound className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black">
+                First-Time Admin Access — Select Your Admin Password
+              </h3>
+              <p className="text-xs text-blue-100 mt-0.5">
+                Admin Dashboard abhi first-time setup ke liye open hai. Yahan se apna Admin Password aur Recovery Gmail set karein.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => openSecurityModal()}
+            className="px-4 py-2.5 rounded-xl bg-white text-blue-700 hover:bg-blue-50 font-black text-xs shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
+          >
+            <KeyRound className="w-4 h-4" />
+            <span>Select Admin Password Now</span>
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -978,11 +1026,15 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={openSecurityModal}
-            className="px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            onClick={() => openSecurityModal()}
+            className={`px-3 py-2.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+              !hasCustomPasscode
+                ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100'
+                : 'border-slate-200 text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200'
+            }`}
           >
             <KeyRound className="w-3.5 h-3.5" />
-            <span>Passcode &amp; Gmail</span>
+            <span>{!hasCustomPasscode ? 'Select Password' : 'Passcode & Gmail'}</span>
           </button>
 
           <button
@@ -1914,58 +1966,74 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
 
+              {hasCustomPasscode && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">
+                      Current Admin Passcode *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowSecPasscodes((v) => !v)}
+                      className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      {showSecPasscodes ? 'Hide' : 'Show'} Passcodes
+                    </button>
+                  </div>
+                  <input
+                    type={showSecPasscodes ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={secCurrentPasscode}
+                    onChange={(e) => setSecCurrentPasscode(e.target.value)}
+                    placeholder="Enter current passcode"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-bold text-slate-700">
-                    Current Admin Passcode *
+                    {hasCustomPasscode
+                      ? 'New Admin Passcode (optional, min 4 chars)'
+                      : 'Select Your Admin Passcode (min 4 chars) *'}
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowSecPasscodes((v) => !v)}
-                    className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
-                  >
-                    {showSecPasscodes ? 'Hide' : 'Show'} Passcodes
-                  </button>
+                  {!hasCustomPasscode && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSecPasscodes((v) => !v)}
+                      className="text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      {showSecPasscodes ? 'Hide' : 'Show'} Passcode
+                    </button>
+                  )}
                 </div>
                 <input
                   type={showSecPasscodes ? 'text' : 'password'}
-                  required
-                  autoComplete="current-password"
-                  value={secCurrentPasscode}
-                  onChange={(e) => setSecCurrentPasscode(e.target.value)}
-                  placeholder="Enter current passcode"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  New Admin Passcode (optional, min 6 chars)
-                </label>
-                <input
-                  type={showSecPasscodes ? 'text' : 'password'}
-                  minLength={6}
+                  required={!hasCustomPasscode}
+                  minLength={4}
                   autoComplete="new-password"
                   value={secNewPasscode}
                   onChange={(e) => setSecNewPasscode(e.target.value)}
-                  placeholder="Leave blank to keep current passcode"
+                  placeholder={hasCustomPasscode ? 'Leave blank to keep current passcode' : 'e.g. 123456'}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
 
-              {secNewPasscode.length > 0 && (
+              {(secNewPasscode.length > 0 || !hasCustomPasscode) && (
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Confirm New Passcode *
+                    Confirm Admin Passcode *
                   </label>
                   <input
                     type={showSecPasscodes ? 'text' : 'password'}
                     required
-                    minLength={6}
+                    minLength={4}
                     autoComplete="new-password"
                     value={secConfirmPasscode}
                     onChange={(e) => setSecConfirmPasscode(e.target.value)}
-                    placeholder="Re-enter new passcode"
+                    placeholder="Re-enter passcode"
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
@@ -1991,7 +2059,11 @@ export const AdminDashboard: React.FC = () => {
                   disabled={secLoading}
                   className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-extrabold shadow-xs cursor-pointer"
                 >
-                  {secLoading ? 'Saving...' : 'Save Security Settings'}
+                  {secLoading
+                    ? 'Saving...'
+                    : hasCustomPasscode
+                    ? 'Save Security Settings'
+                    : 'Set Admin Password'}
                 </button>
               </div>
             </form>
