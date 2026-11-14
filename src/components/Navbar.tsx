@@ -266,9 +266,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center group cursor-pointer focus:outline-none select-none transition-transform active:scale-95 py-0.5"
                 title="goinfoEV - Return to Home"
               >
-                <span className="font-extrabold text-xl xl:text-2xl 2xl:text-3xl tracking-tight text-[#071B2B] whitespace-nowrap">
-                  goinfo<span className="text-[#16A36A] font-black">EV</span>
-                </span>
+                <img
+                  src="/assets/aistudio/Gemini_Generated_Image_f3z76zf3z76zf3z7_25796761.jpg"
+                  alt="goinfoEV Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-9 xl:h-10 2xl:h-11 w-auto object-contain rounded-lg mix-blend-multiply shrink-0"
+                />
               </button>
             </div>
 
@@ -362,9 +365,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center justify-center group cursor-pointer focus:outline-none select-none py-0.5"
                 title="goinfoEV - Return to Home"
               >
-                <span className="font-extrabold text-2xl tracking-tight text-[#071B2B] whitespace-nowrap">
-                  goinfo<span className="text-[#16A36A] font-black">EV</span>
-                </span>
+                <img
+                  src="/assets/aistudio/Gemini_Generated_Image_f3z76zf3z76zf3z7_25796761.jpg"
+                  alt="goinfoEV Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-8 sm:h-9 w-auto object-contain rounded-lg mix-blend-multiply shrink-0"
+                />
               </button>
             </div>
 

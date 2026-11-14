@@ -67,11 +67,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => handleNavClick('home')}
-                className="cursor-pointer select-none text-left"
+                className="flex items-center cursor-pointer select-none text-left group"
               >
-                <span className="font-extrabold text-2xl sm:text-3xl tracking-tight text-[#071B2B] hover:text-[#16A36A] transition-colors">
-                  goinfo<span className="text-[#16A36A] font-black">EV</span>
-                </span>
+                <img
+                  src="/assets/aistudio/Gemini_Generated_Image_f3z76zf3z76zf3z7_25796761.jpg"
+                  alt="goinfoEV Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-10 sm:h-11 w-auto object-contain rounded-lg mix-blend-multiply shrink-0"
+                />
               </button>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white text-[#16A36A] border border-slate-200 shadow-2xs">
                 Pakistan Edition
