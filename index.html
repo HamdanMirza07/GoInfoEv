@@ -3,6 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          if (typeof Response !== 'undefined' && Response.prototype) {
+            const origJson = Response.prototype.json;
+            Response.prototype.json = async function () {
+              try {
+                const text = await this.clone().text();
+                const trimmed = (text || '').trim();
+                if (!trimmed || trimmed.startsWith('The page') || trimmed.startsWith('<!') || trimmed.startsWith('<html') || trimmed.startsWith('NOT_FOUND')) {
+                  return { _nonJson: true };
+                }
+                return JSON.parse(trimmed);
+              } catch (e) {
+                try { return await origJson.call(this); } catch (_) { return { _nonJson: true }; }
+              }
+            };
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+              regs.forEach(function (r) { r.unregister(); });
+            });
+          }
+        } catch (_) {}
+      })();
+    </script>
     <title>goinfoEV – EV Calculators, Range &amp; Fleet Guide</title>
     <meta
       name="description"

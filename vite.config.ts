@@ -37,11 +37,15 @@ export default defineConfig(() => {
             },
           ],
         },
+        selfDestroying: true,
         devOptions: {
-          enabled: true,
+          enabled: false,
           type: 'module',
         },
         workbox: {
+          cleanupOutdatedCaches: true,
+          skipWaiting: true,
+          clientsClaim: true,
           navigateFallbackDenylist: [/^\/api\//, /^\/robots\.txt$/, /^\/sitemap\.xml$/],
         },
       }),

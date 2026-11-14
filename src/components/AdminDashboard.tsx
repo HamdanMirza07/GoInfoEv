@@ -48,6 +48,20 @@ import {
   setAdminToken,
   verifyLocalAdminPasscode,
 } from '../utils/authHeaders';
+import { getLocalUsersDb, saveLocalUsersDb } from '../context/SubscriptionContext';
+
+function computeStatsFromList(list: UserSubscription[]): SubscriptionStats {
+  return {
+    totalUsers: list.length,
+    totalRequests: list.filter((s) => s.status !== 'free').length,
+    pendingCount: list.filter((s) => s.status === 'pending').length,
+    approvedCount: list.filter((s) => s.status === 'approved').length,
+    disallowedCount: list.filter((s) => s.status === 'disallowed').length,
+    totalRevenuePKR: list
+      .filter((s) => s.status === 'approved')
+      .reduce((sum, s) => sum + (s.amount || 499), 0),
+  };
+}
 
 export const AdminDashboard: React.FC = () => {
   const { totalCount } = useCatalog();
@@ -230,36 +244,45 @@ export const AdminDashboard: React.FC = () => {
         headers: getAdminAuthHeaders(),
         credentials: 'include',
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
+      if (res.ok && isJson) {
         const data = await res.json();
-        setSubscriptions(data.subscriptions || []);
+        const serverList: UserSubscription[] = data.subscriptions || [];
+        setSubscriptions(serverList);
         if (data.stats) {
           setStats(data.stats);
         }
+        return;
       }
-    } catch (err) {
-      console.error('Failed to load subscriptions:', err);
+    } catch {
+      // Fall through to local DB
     } finally {
       setLoading(false);
     }
+
+    // Fallback to local users DB (for Vercel static hosting)
+    const localList = getLocalUsersDb();
+    setSubscriptions(localList);
+    setStats(computeStatsFromList(localList));
   };
 
   const fetchPaymentConfig = async () => {
     try {
       const res = await fetch('/api/payment-config');
-      if (res.ok) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.ok && isJson) {
         const data = await res.json();
         if (data && typeof data === 'object') {
           setPaymentConfig(data);
         }
       }
-    } catch (err) {
-      console.error('Failed to load payment config:', err);
+    } catch {
+      // Use default payment config
     }
   };
 
@@ -610,6 +633,20 @@ export const AdminDashboard: React.FC = () => {
   // Allow (Approve) Access
   const handleAllowAccess = async (id: string) => {
     setActionLoading(id);
+    // Also update local DB
+    const localDb = getLocalUsersDb();
+    const localIdx = localDb.findIndex((u) => u.id === id);
+    if (localIdx !== -1) {
+      localDb[localIdx] = {
+        ...localDb[localIdx],
+        status: 'approved',
+        plan: localDb[localIdx].plan || 'monthly',
+        planName: localDb[localIdx].planName || 'Monthly Unlimited Pro',
+        amount: localDb[localIdx].amount || 499,
+        updatedAt: new Date().toISOString(),
+      };
+      saveLocalUsersDb(localDb);
+    }
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/status`, {
         method: 'POST',
@@ -617,16 +654,15 @@ export const AdminDashboard: React.FC = () => {
         credentials: 'include',
         body: JSON.stringify({ status: 'approved' })
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
-        await fetchSubscriptions();
-      }
-    } catch (err) {
-      console.error('Failed to approve subscription:', err);
+      await fetchSubscriptions();
+    } catch {
+      await fetchSubscriptions();
     } finally {
       setActionLoading(null);
     }
@@ -638,6 +674,17 @@ export const AdminDashboard: React.FC = () => {
     if (reason === null) return; // cancelled
 
     setActionLoading(id);
+    const localDb = getLocalUsersDb();
+    const localIdx = localDb.findIndex((u) => u.id === id);
+    if (localIdx !== -1) {
+      localDb[localIdx] = {
+        ...localDb[localIdx],
+        status: 'disallowed',
+        disallowedReason: reason || 'Payment verification failed',
+        updatedAt: new Date().toISOString(),
+      };
+      saveLocalUsersDb(localDb);
+    }
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/status`, {
         method: 'POST',
@@ -645,16 +692,15 @@ export const AdminDashboard: React.FC = () => {
         credentials: 'include',
         body: JSON.stringify({ status: 'disallowed', reason })
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
-        await fetchSubscriptions();
-      }
-    } catch (err) {
-      console.error('Failed to disallow subscription:', err);
+      await fetchSubscriptions();
+    } catch {
+      await fetchSubscriptions();
     } finally {
       setActionLoading(null);
     }
@@ -663,22 +709,32 @@ export const AdminDashboard: React.FC = () => {
   // Reset Free Uses back to 0 (gives 7 new uses)
   const handleResetFreeUses = async (id: string) => {
     setActionLoading(id);
+    const localDb = getLocalUsersDb();
+    const localIdx = localDb.findIndex((u) => u.id === id);
+    if (localIdx !== -1) {
+      localDb[localIdx] = {
+        ...localDb[localIdx],
+        freeUsesCount: 0,
+        status: localDb[localIdx].status === 'disallowed' ? 'free' : localDb[localIdx].status,
+        updatedAt: new Date().toISOString(),
+      };
+      saveLocalUsersDb(localDb);
+    }
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}/reset-free`, {
         method: 'POST',
         headers: getAdminAuthHeaders(),
         credentials: 'include',
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
-        await fetchSubscriptions();
-      }
-    } catch (err) {
-      console.error('Failed to reset uses:', err);
+      await fetchSubscriptions();
+    } catch {
+      await fetchSubscriptions();
     } finally {
       setActionLoading(null);
     }
@@ -689,22 +745,23 @@ export const AdminDashboard: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this subscription record?')) return;
 
     setActionLoading(id);
+    const localDb = getLocalUsersDb().filter((u) => u.id !== id);
+    saveLocalUsersDb(localDb);
     try {
       const res = await fetch(`/api/admin/subscriptions/${id}`, {
         method: 'DELETE',
         headers: getAdminAuthHeaders(),
         credentials: 'include',
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
-        await fetchSubscriptions();
-      }
-    } catch (err) {
-      console.error('Failed to delete subscription:', err);
+      await fetchSubscriptions();
+    } catch {
+      await fetchSubscriptions();
     } finally {
       setActionLoading(null);
     }
@@ -716,6 +773,26 @@ export const AdminDashboard: React.FC = () => {
     if (!newUserIdentifier.trim()) return;
 
     setActionLoading('new-user');
+    const nowIso = new Date().toISOString();
+    const localNewRecord: UserSubscription = {
+      id: 'sub-' + Date.now(),
+      name: newUserName.trim() || 'Direct Subscriber',
+      identifier: newUserIdentifier.trim().replace(/\D/g, '') || newUserIdentifier.trim(),
+      authType: 'phone',
+      status: 'approved',
+      plan: newUserPlan,
+      planName: newUserPlan === 'annual' ? 'Annual Full Suite Pro' : 'Monthly Unlimited Pro',
+      amount: newUserPlan === 'annual' ? 2499 : 499,
+      paymentMethod: newUserPaymentMethod,
+      trxId: newUserTrxId.trim() || 'ADMIN-GRANT',
+      freeUsesCount: 0,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    const localDb = getLocalUsersDb();
+    localDb.unshift(localNewRecord);
+    saveLocalUsersDb(localDb);
+
     try {
       const res = await fetch('/api/admin/subscriptions/manual', {
         method: 'POST',
@@ -730,20 +807,23 @@ export const AdminDashboard: React.FC = () => {
           trxId: newUserTrxId.trim()
         })
       });
-      if (res.status === 401) {
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      if (res.status === 401 && isJson) {
         clearAdminToken();
         setIsAuthenticated(false);
         return;
       }
-      if (res.ok) {
-        setAddModalOpen(false);
-        setNewUserName('');
-        setNewUserIdentifier('');
-        setNewUserTrxId('');
-        await fetchSubscriptions();
-      }
-    } catch (err) {
-      console.error('Failed to add manual user:', err);
+      setAddModalOpen(false);
+      setNewUserName('');
+      setNewUserIdentifier('');
+      setNewUserTrxId('');
+      await fetchSubscriptions();
+    } catch {
+      setAddModalOpen(false);
+      setNewUserName('');
+      setNewUserIdentifier('');
+      setNewUserTrxId('');
+      await fetchSubscriptions();
     } finally {
       setActionLoading(null);
     }

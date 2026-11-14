@@ -1156,53 +1156,65 @@ Timestamp: ${new Date().toLocaleString()}`,
     }
   });
 
-  // 2. User Sign-in / Registration (Phone or Email)
+  // 2. User Sign-in / Registration (Phone Only — Phone, Name, and Password Required)
   app.post("/api/subscriptions/auth", authLimiter, (req, res) => {
     try {
-      const { name, identifier, authType, password } = req.body;
-      const cleanIdentifier = sanitizeText(identifier, 160);
-      if (!cleanIdentifier) {
-        return res.status(400).json({ error: "Phone number or email is required." });
+      const { name, identifier, password } = req.body;
+      const rawPhone = sanitizeText(identifier, 40);
+      if (!rawPhone) {
+        return res.status(400).json({ error: "Pakistani mobile phone number is required." });
+      }
+      if (rawPhone.includes("@")) {
+        return res.status(400).json({ error: "Email sign-in is disabled. Please use your mobile phone number." });
       }
 
-      const detectedAuthType = authType === "email" || authType === "phone"
-        ? authType
-        : cleanIdentifier.includes("@")
-        ? "email"
-        : "phone";
-
-      if (detectedAuthType === "email" && !isValidEmail(cleanIdentifier)) {
-        return res.status(400).json({ error: "Please enter a valid email address." });
+      const digitsOnly = rawPhone.replace(/\D/g, "");
+      if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+        return res.status(400).json({ error: "Please enter a valid mobile phone number (e.g. 03001234567)." });
       }
 
-      const cleanName = sanitizeText(name, 80) || (detectedAuthType === "email" ? cleanIdentifier.split("@")[0] : "EV User");
+      // Normalize Pakistani mobile numbers (e.g. 0300-1234567 -> 03001234567)
+      const cleanIdentifier = digitsOnly.startsWith("92") && digitsOnly.length === 12
+        ? "0" + digitsOnly.slice(2)
+        : digitsOnly;
+
+      const providedName = sanitizeText(name, 80);
+      const cleanName = providedName && providedName.length >= 2
+        ? providedName
+        : `EV Member (${cleanIdentifier.slice(-4)})`;
+
       const cleanPassword = typeof password === "string" ? password.trim() : "";
+      if (!cleanPassword || cleanPassword.length < 4) {
+        return res.status(400).json({ error: "Password is required (at least 4 characters)." });
+      }
 
       let existing = subscriptions.find(
-        s => s.identifier.toLowerCase().trim() === cleanIdentifier.toLowerCase()
+        s => s.identifier.replace(/\D/g, "") === cleanIdentifier || s.identifier.toLowerCase().trim() === rawPhone.toLowerCase()
       );
 
       if (existing) {
         // Verify password if account has a password set
         if (existing.password) {
-          if (!cleanPassword || !verifyPassword(cleanPassword, existing.password)) {
-            return res.status(401).json({ error: "Incorrect password for this account." });
+          if (!verifyPassword(cleanPassword, existing.password)) {
+            return res.status(401).json({ error: "Incorrect password for this phone number." });
           }
           // Migrate legacy plaintext password to scrypt hash automatically
           if (!existing.password.startsWith("scrypt:")) {
             existing.password = hashPassword(cleanPassword);
             saveSubscriptions();
           }
-        } else if (cleanPassword.length >= 6) {
+        } else {
           existing.password = hashPassword(cleanPassword);
           saveSubscriptions();
         }
 
-        if (name && cleanName && existing.name !== cleanName) {
-          existing.name = cleanName;
-          existing.updatedAt = new Date().toISOString();
-          saveSubscriptions();
+        existing.authType = "phone";
+        existing.identifier = cleanIdentifier;
+        if (providedName && providedName.length >= 2 && existing.name !== providedName) {
+          existing.name = providedName;
         }
+        existing.updatedAt = new Date().toISOString();
+        saveSubscriptions();
 
         const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
         const token = signAuthToken({
@@ -1220,17 +1232,13 @@ Timestamp: ${new Date().toLocaleString()}`,
         });
       }
 
-      if (cleanPassword && cleanPassword.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters long." });
-      }
-
       // Create new user with hashed password and 0 initial free uses
       const newUser: SubscriptionRecord = {
         id: "sub-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
         name: cleanName,
         identifier: cleanIdentifier,
-        authType: detectedAuthType,
-        password: cleanPassword ? hashPassword(cleanPassword) : undefined,
+        authType: "phone",
+        password: hashPassword(cleanPassword),
         status: "free",
         freeUsesCount: 0,
         createdAt: new Date().toISOString(),

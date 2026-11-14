@@ -102,14 +102,14 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
         <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className={`p-2.5 rounded-xl text-white ${
-              remainingUses === 0 ? 'bg-rose-600' : remainingUses <= 2 ? 'bg-amber-500' : 'bg-blue-600'
+              remainingUses === 0 ? 'bg-rose-600' : remainingUses <= 2 ? 'bg-amber-500' : 'bg-[#16A36A]'
             }`}>
               <Zap className="w-4 h-4 fill-current" />
             </div>
 
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-800">
+                <span className="text-xs font-bold text-[#071B2B]">
                   Global Free Tier Quota
                 </span>
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
@@ -117,16 +117,16 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
                     ? 'bg-rose-100 text-rose-700' 
                     : remainingUses <= 2 
                     ? 'bg-amber-100 text-amber-800' 
-                    : 'bg-blue-100 text-blue-700'
+                    : 'bg-emerald-100 text-emerald-800'
                 }`}>
                   {remainingUses === 0 ? '7/7 Uses Exhausted' : `${remainingUses} of ${maxFreeUses} Total Uses Remaining`}
                 </span>
-                <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-semibold border border-blue-100">
+                <span className="text-[10px] text-[#16A36A] bg-[#F5F8F6] px-2 py-0.5 rounded-md font-semibold border border-emerald-500/20">
                   Shared across all tools
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 mt-0.5">
-                Total 7 free uses for the entire suite (combined across all tools, not 7 per tool). You have used <strong className="text-slate-900 font-black">{freeUsesCount} of {maxFreeUses}</strong>.
+                Total 7 free uses for the entire suite (combined across all tools, not 7 per tool). You have used <strong className="text-[#071B2B] font-black">{freeUsesCount} of {maxFreeUses}</strong>.
                 <span className="text-slate-400 ml-1.5 hidden sm:inline">• ہر ٹول الگ نہیں، تمام ٹولز ملا کر کل 7 فری یوزز ہیں</span>
               </p>
             </div>
@@ -154,7 +154,7 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
 
             <button
               onClick={() => openSubscriptionModal(user ? 'pay' : 'auth')}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
               <CreditCard className="w-3.5 h-3.5" />
               <span>Get Unlimited Access</span>
@@ -170,7 +170,7 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
         <div className="bg-white border-2 border-dashed border-rose-300 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-sm my-4 relative overflow-hidden">
           {/* Subtle background glow */}
           <div className="absolute -right-16 -top-16 w-48 h-48 bg-rose-100/50 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-16 -bottom-16 w-48 h-48 bg-blue-100/50 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-16 -bottom-16 w-48 h-48 bg-emerald-100/50 rounded-full blur-2xl pointer-events-none" />
 
           {/* Lock Icon */}
           <div className="relative inline-flex items-center justify-center">
@@ -215,7 +215,7 @@ export const CalculatorGuard: React.FC<CalculatorGuardProps> = ({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto pt-2">
             <button
               onClick={() => openSubscriptionModal(user ? 'pay' : 'auth')}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <CreditCard className="w-4 h-4" />
               <span>{user ? 'Choose Subscription Plan' : 'Sign In / Register with Phone'}</span>

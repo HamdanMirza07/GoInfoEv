@@ -29,6 +29,7 @@ import {
 import { useSubscription } from '../context/SubscriptionContext';
 import { TabType } from './Navbar';
 import { formatPKR } from '../data/evModels';
+import { PhoneSignIn } from './PhoneSignIn';
 
 interface UserDashboardProps {
   onNavigate: (tab: TabType) => void;
@@ -81,10 +82,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
     return (
       <div className="max-w-4xl mx-auto py-10 space-y-8 animate-fadeIn">
         <div className="text-center space-y-3">
-          <div className="inline-flex p-3 rounded-2xl bg-blue-100 text-blue-700 shadow-xs">
+          <div className="inline-flex p-3 rounded-2xl bg-[#071B2B] text-[#16A36A] shadow-xs">
             <User className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+          <h1 className="text-3xl font-black tracking-tight text-[#071B2B]">
             User Account &amp; Usage Dashboard
           </h1>
           <p className="text-slate-600 max-w-lg mx-auto text-sm leading-relaxed">
@@ -98,42 +99,42 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-500">Current Session</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">
                   Guest Visitor
                 </span>
               </div>
-              <h2 className="text-xl font-black text-slate-900 mt-1">Free Trial Usage Status</h2>
+              <h2 className="text-xl font-black text-[#071B2B] mt-1">Free Trial Usage Status</h2>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => openSubscriptionModal('auth')}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-[#16A36A] hover:bg-[#138e5b] text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <User className="w-4 h-4" />
-                <span>Login or Register</span>
+                <Phone className="w-4 h-4" />
+                <span>Sign In / Register with Phone</span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-4 rounded-2xl bg-[#F5F8F6] border border-slate-200">
               <span className="text-xs font-bold text-slate-500 block">Total Suite Uses Combined</span>
-              <div className="text-2xl font-black text-slate-900 mt-1">
+              <div className="text-2xl font-black text-[#071B2B] mt-1">
                 {freeUsesCount} <span className="text-sm font-normal text-slate-400">/ {maxFreeUses} Total</span>
               </div>
               <div className="w-full bg-slate-200 h-2 rounded-full mt-2 overflow-hidden">
                 <div 
-                  className="bg-blue-600 h-full rounded-full transition-all"
+                  className="bg-[#16A36A] h-full rounded-full transition-all"
                   style={{ width: `${Math.min(100, (freeUsesCount / maxFreeUses) * 100)}%` }}
                 />
               </div>
               <span className="text-[10px] text-slate-400 mt-1 block">Shared pool (not 7 per tool)</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-4 rounded-2xl bg-[#F5F8F6] border border-slate-200">
               <span className="text-xs font-bold text-slate-500 block">Calculations Remaining</span>
-              <div className="text-2xl font-black text-emerald-600 mt-1">
+              <div className="text-2xl font-black text-[#16A36A] mt-1">
                 {remainingUses}
               </div>
               <span className="text-[11px] text-slate-500 mt-1 block">
@@ -141,34 +142,23 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
               </span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-4 rounded-2xl bg-[#F5F8F6] border border-slate-200">
               <span className="text-xs font-bold text-slate-500 block">Unlimited VIP Access</span>
-              <div className="text-2xl font-black text-slate-900 mt-1">
+              <div className="text-2xl font-black text-[#071B2B] mt-1">
                 Inactive
               </div>
               <button
                 onClick={() => openSubscriptionModal('pay')}
-                className="text-xs font-bold text-blue-600 hover:text-blue-800 underline mt-1 block cursor-pointer"
+                className="text-xs font-bold text-[#16A36A] hover:text-[#138e5b] underline mt-1 block cursor-pointer"
               >
                 Upgrade for PKR 499/mo &rarr;
               </button>
             </div>
           </div>
 
-          {/* Quick Sign-in Callout */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1 text-center sm:text-left">
-              <div className="font-black text-slate-900 text-sm">Save your calculations and access VIP Pro</div>
-              <p className="text-xs text-slate-600">
-                Sign in with your Pakistani phone number (e.g. 0300-1234567) or email to track your payment requests and unlimited calculator usage.
-              </p>
-            </div>
-            <button
-              onClick={() => openSubscriptionModal('auth')}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all shrink-0 cursor-pointer"
-            >
-              Sign In Now
-            </button>
+          {/* Embedded Phone-Only Sign In Card */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-white border border-emerald-500/25 shadow-2xs max-w-md mx-auto">
+            <PhoneSignIn submitLabel="Sign In with Phone" />
           </div>
         </div>
       </div>
@@ -183,17 +173,17 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
         <div className="flex items-center gap-4">
           <div className={`p-3.5 rounded-2xl text-white shadow-sm shrink-0 ${
             isSubscriber 
-              ? 'bg-gradient-to-br from-emerald-500 to-teal-600' 
+              ? 'bg-[#16A36A]' 
               : isPending 
               ? 'bg-amber-500' 
-              : 'bg-blue-600'
+              : 'bg-[#071B2B]'
           }`}>
             <User className="w-7 h-7" />
           </div>
 
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-[#071B2B] tracking-tight">
                 {user.name || 'EV Member'}
               </h1>
               <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
@@ -203,7 +193,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
                   ? 'bg-amber-100 text-amber-900 border border-amber-300' 
                   : isDisallowed
                   ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                  : 'bg-blue-100 text-blue-900 border border-blue-300'
+                  : 'bg-emerald-50 text-[#071B2B] border border-emerald-200'
               }`}>
                 {isSubscriber && <ShieldCheck className="w-3.5 h-3.5" />}
                 {isPending && <Clock className="w-3.5 h-3.5" />}
@@ -213,7 +203,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ onNavigate }) => {
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
               <span className="flex items-center gap-1 font-mono">
-                {user.authType === 'phone' ? <Phone className="w-3 h-3 text-slate-400" /> : <Mail className="w-3 h-3 text-slate-400" />}
+                <Phone className="w-3 h-3 text-[#16A36A]" />
                 {user.identifier}
               </span>
               <span className="text-slate-300">•</span>
